@@ -2,9 +2,17 @@ import streamlit as st
 import json
 import os
 
-from llm_client import extract_with_groq
+from llm_client import resume_to_json_with_groq
 from utils import clean_json , extract_resume_text
 from mongo_client import mongo_init
+import logging
+
+logging.basicConfig(
+    level=logging.WARNING,
+    format='[%(levelname)s] %(message)s'
+)
+logger = logging.getLogger(__name__)
+
 
 # Streamlit UI
 st.set_page_config(page_title="Resume Extractor (Groq LLaMA 3.3)", layout="wide")
@@ -27,8 +35,8 @@ if uploaded_files:
 
         with st.spinner("Extracting structured JSON using Groq LLaMA 3.3..."):
             try:
-                extracted_json_raw = extract_with_groq(resume_text)
-                print(f"\n{extracted_json_raw}\n")
+                extracted_json_raw = resume_to_json_with_groq(resume_text)
+                logger.info(f"\n{extracted_json_raw}\n")
                 
                 cleaned_json = clean_json(extracted_json_raw)
                 
@@ -38,10 +46,10 @@ if uploaded_files:
                     try:
                         collection.insert_one(extracted_data)
                         st.success("🎉 Candidate profile saved to MongoDB!")
-                        print("Added to mongo db")
+                        logger.info("Added to mongo db")
                     except Exception as e:
-                        st.error("Error adding to mongo"+ str(e))
-                        print("Error"+str(e))
+                        st.error("Error adding to mongo "+ str(e))
+                        logger.exception("Error: "+str(e))
 
                 except json.JSONDecodeError:
                     extracted_data = {
