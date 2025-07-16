@@ -2,9 +2,9 @@ import streamlit as st
 import json
 import os
 
-from llm_client import resume_to_json_with_groq
+from clients.Groq_client import resume_to_json_with_groq
 from utils import clean_json , extract_resume_text
-from mongo_client import mongo_init
+from clients.mongo_client import mongo_init
 import logging
 
 logging.basicConfig(
@@ -25,24 +25,25 @@ if uploaded_files:
     for uploaded_file in uploaded_files:
         st.subheader(f"Processing: {uploaded_file.name}")
 
-        save_path = f"./temp_{uploaded_file.name}"
-        with open(save_path, "wb") as f:
-            f.write(uploaded_file.getbuffer())
+        try:
+            save_path = f"./temp_{uploaded_file.name}"
+            with open(save_path, "wb") as f:
+                f.write(uploaded_file.getbuffer())
 
-        resume_text = extract_resume_text(save_path)
+            resume_text = extract_resume_text(save_path)
+        except Exception as e:
+            st.error(str(e))
+            logger.error("Error in extracting resume txt"+str(e))
         st.write("✅ **Extracted Resume Text:**")
         st.text_area("Resume Text", resume_text[:3000], height=300)
 
         with st.spinner("Extracting structured JSON using Groq LLaMA 3.3..."):
             try:
-                extracted_json_raw = resume_to_json_with_groq(resume_text)
-                logger.info(f"\n{extracted_json_raw}\n")
-                
-                cleaned_json = clean_json(extracted_json_raw)
-                
+                cleaned_json = resume_to_json_with_groq(resume_text)
+                logger.info(f"\n{cleaned_json}\n")
+                                
                 try:
                     extracted_data = json.loads(cleaned_json)
-                    # Store in MongoDB
                     try:
                         collection.insert_one(extracted_data)
                         st.success("🎉 Candidate profile saved to MongoDB!")
@@ -54,7 +55,7 @@ if uploaded_files:
                 except json.JSONDecodeError:
                     extracted_data = {
                         "error": "Groq model returned invalid JSON.",
-                        "raw_output": extracted_json_raw
+                        "raw_output": cleaned_json
                     }
 
                 st.write("🛠️ **Extracted Structured Data:**")
@@ -64,5 +65,5 @@ if uploaded_files:
             except Exception as e:
                 st.error(f"Error: {str(e)}")
 
-            finally:
-                os.remove(save_path)
+        
+            

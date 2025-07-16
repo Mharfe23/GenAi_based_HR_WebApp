@@ -2,6 +2,16 @@
 from groq import Groq
 import os
 import dotenv
+from utils import clean_json
+from clients.mongo_client import mongo_init
+import logging
+import json
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='[%(levelname)s] %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 
 dotenv.load_dotenv()
@@ -46,7 +56,8 @@ def resume_to_json_with_groq(resume_text):
             {"role": "user", "content": prompt}
         ]
     )
-    return completion.choices[0].message.content
+    json_result = completion.choices[0].message.content
+    return clean_json(json_result)
 
 def text_to_mongo_query(text):
     prompt = f"""
@@ -75,7 +86,9 @@ def text_to_mongo_query(text):
     Use strict equality {{field: value}} only for exact numeric matching (like years of experience).
     When checking for nulls, use {{ field: null}}.
     Use dot notation for nested fields (example: "current_role_experience.role").
-    Generate MongoDB json querie using this data model.
+    Make sure that the attribute you are searching with is relevant (example: data scientist is a role not a skill). 
+
+    Generate MongoDB json querie using this data model and filter on only the necessary attributes based on the Question
 
     Here is the Question {text}
 
@@ -88,7 +101,30 @@ def text_to_mongo_query(text):
             {"role": "user", "content": prompt}
         ]
     )
-    return completion.choices[0].message.content
+    json_query = completion.choices[0].message.content
+    return clean_json(json_query)
 
-if __name__ == "__main__": 
-    print(text_to_mongo_query("i want the condidate that are good with React and flask and have 4 years of experience as full stack"))
+def main():
+    collection = mongo_init()
+    while True:
+        question = input("Entrer votre question ou q pour terminer: ")
+        if question == "q":
+            break
+
+        query = text_to_mongo_query(question)
+        try:
+            dict_query = json.loads(query)
+        except json.JSONDecodeError as e:
+            logger.exception("Couldn't parse json to dict :"+ str(e))
+            return
+        logger.info("Query: "+ str(dict_query))
+        results = collection.find(dict_query)
+        found = False
+        for doc in results:
+            logger.info(doc)
+            found = True
+        if not found:
+            logger.warning("Aucun résultat trouvé.")
+
+if __name__ == "__main__":
+    main()
