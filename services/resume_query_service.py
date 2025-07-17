@@ -2,10 +2,10 @@
 from utils import clean_json
 from clients.mongo_client import mongo_init
 import logging
-import json
 import yaml
 from llms.groqClient import GroqClient
 from llms.ollamaClient import OllamaClient
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 
-def resume_to_json_(resume_text, llm_client):
+def resume_to_json(resume_text, llm_client):
     prompt = f"""
     You are a professional recruiter assistant.
 
@@ -88,6 +88,11 @@ def text_to_mongo_query(text, llm_client):
     result_json_query = llm_client.generate(prompt)
     
     return clean_json(result_json_query)
+
+def query_to_resume(query,collection):
+    dict_query = yaml.safe_load(query)
+    return collection.find(dict_query)
+
 
 def main():
     collection = mongo_init()

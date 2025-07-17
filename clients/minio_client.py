@@ -2,6 +2,9 @@ from minio import Minio
 from dotenv import load_dotenv
 import os
 import logging
+from werkzeug.utils import secure_filename
+import uuid
+import tempfile
 
 load_dotenv()
 MINIO_ROOT_USER = os.getenv('MINIO_ROOT_USER')
@@ -15,28 +18,40 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-bucket_name = "CV"
 
-def init_minio_client():
+class MinioClientService:
+    def __init__(self, bucket_name="CV_1"):
+        self.bucket_name = bucket_name
+        self.client = Minio(
+            MINIO_ENDPOINT,
+            access_key=MINIO_ROOT_USER,
+            secret_key=MINIO_ROOT_PASSWORD,
+            secure=False
+        )
+        self._ensure_bucket()
 
-    client = Minio(
-        MINIO_ENDPOINT,
-        access_key=MINIO_ROOT_USER,
-        secret_key=MINIO_ROOT_PASSWORD,
-        secure=False
-    )
-    found = client.bucket_exists(bucket_name)
-    if not found:
-        client.make_bucket(bucket_name)
-        print("Created bucket", bucket_name)
-    else:
-        print("Bucket", bucket_name, "already exists")
+    def _ensure_bucket(self):
+        if not self.client.bucket_exists(self.bucket_name):
+            self.client.make_bucket(self.bucket_name)
+            logger.info(f"Created bucket {self.bucket_name}")
+        else:
+            logger.info(f"Bucket {self.bucket_name} already exists")
 
-    return client
+    def upload_file(self, uploaded_file):
+        """Uploads a file and returns the object name."""
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp_file:
+            tmp_file.write(uploaded_file.read())
+            tmp_path = tmp_file.name
 
-if __name__ == "__main__":
-    load_dotenv()
-    try:
-        minio_client = init_minio_client()
-    except Exception as e:
-        logging.error(f"Failed to initialize MinIO client: {e}")
+        secure_file_name = secure_filename(f"{uploaded_file.name}_{uuid.uuid4()}.pdf")
+        self.client.fput_object(self.bucket_name, secure_file_name, tmp_path)
+        logger.info(f"Uploaded {secure_file_name} to bucket {self.bucket_name}")
+        return secure_file_name
+
+    def download_file(self, object_name, destination_path):
+        self.client.fget_object(self.bucket_name, object_name, destination_path)
+        logger.info(f"Downloaded {object_name} to {destination_path}")
+
+    def delete_file(self, object_name):
+        self.client.remove_object(self.bucket_name, object_name)
+        logger.info(f"Deleted {object_name} from bucket {self.bucket_name}")
