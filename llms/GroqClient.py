@@ -19,3 +19,6 @@ class GroqClient(LLMClientABC):
         ]
         )
         return completion.choices[0].message.content
+    
+    def __str__(self) -> str:
+        return "Groq :"+ self.modelName

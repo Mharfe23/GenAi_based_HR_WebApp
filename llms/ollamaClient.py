@@ -9,3 +9,6 @@ class OllamaClient(LLMClientABC):
 
     def generate(self, prompt: str) -> str:
         return self.model.invoke(prompt).content
+    
+    def __str__(self) -> str:
+        return "Ollama :"+ self.modelName

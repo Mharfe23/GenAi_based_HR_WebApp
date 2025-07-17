@@ -8,6 +8,7 @@ import logging
 from llms.ollamaClient import OllamaClient
 from llms.groqClient import GroqClient
 from services.resume_query_service import resume_to_json
+from clients.minio_client import MinioClientService
 
 logging.basicConfig(
     level=logging.WARNING,
@@ -30,6 +31,7 @@ def UploadPage():
 
     ollama_client = OllamaClient()
     groq_client = GroqClient()
+    minio_client = MinioClientService()
 
     llm_choice = st.radio("Choose LLM Client:",("Groq API llama3.3_70B","llama3.2 3B(local)"))
     match llm_choice:
@@ -54,11 +56,16 @@ def UploadPage():
             except Exception as e:
                 st.error(str(e))
                 logger.error("Error in extracting resume txt"+str(e))
-            st.write("✅ **Extracted Resume Text:**")
+            finally:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+
+            logger.info("**Extracted Resume Text:**")
 
             with st.spinner(f"Extracting structured JSON using {llm_client}..."):
                 try:
-                    cleaned_json = resume_to_json(resume_text,llm_client)
+
+                    cleaned_json = resume_to_json(resume_text, llm_client)
                     logger.info(f"\n{cleaned_json}\n")
                               
                     try:
@@ -69,7 +76,10 @@ def UploadPage():
                             "raw_output": cleaned_json
                         }
                     try:
+                        minio_filename = minio_client.upload_file(uploaded_file)
+                        extracted_data["minio_file_name"] = minio_filename
                         collection.insert_one(extracted_data)
+                        
                         st.success("🎉 Candidate profile saved to MongoDB!")
                         logger.info("Added to mongo db")
                     except Exception as e:
@@ -85,4 +95,5 @@ def UploadPage():
                     st.error(f"Error: {str(e)}")
 
             
+
                 

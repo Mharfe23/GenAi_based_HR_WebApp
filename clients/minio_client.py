@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 class MinioClientService:
-    def __init__(self, bucket_name="CV_1"):
+    def __init__(self, bucket_name="resumes"):
         self.bucket_name = bucket_name
         self.client = Minio(
             MINIO_ENDPOINT,
