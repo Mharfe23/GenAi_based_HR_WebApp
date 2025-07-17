@@ -2,8 +2,7 @@ import streamlit as st
 import json
 import os
 
-from clients.Groq_client import resume_to_json_with_groq
-from utils import clean_json , extract_resume_text
+from utils import extract_resume_text
 from clients.mongo_client import mongo_init
 import logging
 

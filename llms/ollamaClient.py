@@ -8,4 +8,4 @@ class OllamaClient(LLMClientABC):
         self.model = ChatOllama(model=self.modelName)
 
     def generate(self, prompt: str) -> str:
-        return self.model.invoke(prompt)
+        return self.model.invoke(prompt).content

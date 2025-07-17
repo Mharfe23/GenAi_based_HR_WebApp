@@ -1,11 +1,11 @@
 
-from groq import Groq
-import os
-import dotenv
 from utils import clean_json
 from clients.mongo_client import mongo_init
 import logging
 import json
+import yaml
+from llms.groqClient import GroqClient
+from llms.ollamaClient import OllamaClient
 
 logging.basicConfig(
     level=logging.INFO,
@@ -14,13 +14,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-dotenv.load_dotenv()
 
-
-client_groq = Groq(api_key=os.environ.get("GROQ_API_KEY"))
-
-
-def resume_to_json_with_groq(resume_text):
+def resume_to_json_(resume_text, llm_client):
     prompt = f"""
     You are a professional recruiter assistant.
 
@@ -50,16 +45,11 @@ def resume_to_json_with_groq(resume_text):
 
     {resume_text}
     """
-    completion = client_groq.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[
-            {"role": "user", "content": prompt}
-        ]
-    )
-    json_result = completion.choices[0].message.content
-    return clean_json(json_result)
+    result_json = llm_client.generate(prompt)
 
-def text_to_mongo_query(text):
+    return clean_json(result_json)
+
+def text_to_mongo_query(text, llm_client):
     prompt = f"""
     You are a professional backend assistant specializing in MongoDB.
 
@@ -95,30 +85,29 @@ def text_to_mongo_query(text):
     Do not return explanations — only return the json MongoDB query.
     """
 
-    completion = client_groq.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[
-            {"role": "user", "content": prompt}
-        ]
-    )
-    json_query = completion.choices[0].message.content
-    return clean_json(json_query)
+    result_json_query = llm_client.generate(prompt)
+    
+    return clean_json(result_json_query)
 
 def main():
     collection = mongo_init()
+    ollama_client = OllamaClient()
+    groq_client = GroqClient()
+
     while True:
         question = input("Entrer votre question ou q pour terminer: ")
         if question == "q":
             break
 
-        query = text_to_mongo_query(question)
+        query = text_to_mongo_query(question, groq_client)
+        if not query:
+            logger.error("Couldn't find the json in the llm response")
         try:
-            dict_query = json.loads(query)
-        except json.JSONDecodeError as e:
-            logger.exception("Couldn't parse json to dict :"+ str(e))
-            return
-        logger.info("Query: "+ str(dict_query))
-        results = collection.find(dict_query)
+            dict_query = yaml.safe_load(query)
+            logger.info("Query: "+ str(dict_query))
+            results = collection.find(dict_query)
+        except Exception as e:
+            logger.exception("Query execution failed: " + str(e))
         found = False
         for doc in results:
             logger.info(doc)
