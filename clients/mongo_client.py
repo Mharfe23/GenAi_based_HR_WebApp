@@ -20,7 +20,7 @@ if not DB_PASSWORD:
     raise ValueError("MongoDB credentials are not set in environment variables.")
 
 
-def mongo_init(db_name="ResumeDB", collection_name="Candidats"):
+def _mongo_init(db_name="ResumeDB", collection_name="Candidats"):
     """Initialize MongoDB connection and return the specified collection."""
     try:
         mongo_client = MongoClient(uri_mongo, server_api=ServerApi('1'))
@@ -32,3 +32,7 @@ def mongo_init(db_name="ResumeDB", collection_name="Candidats"):
         logger.error(f"MongoDB connection failed: {e}")
         raise
 
+collection = _mongo_init()
+
+def mongo_init():
+    return collection
