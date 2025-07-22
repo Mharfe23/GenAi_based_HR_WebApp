@@ -3,6 +3,7 @@ from llms.groqClient import GroqClient
 from llms.ollamaClient import OllamaClient
 from services.resume_query_service import query_to_resume,text_to_mongo_query
 from clients.mongo_client import mongo_init
+from clients.minio_client import MinioClientService
 import logging
 logging.basicConfig(
     level=logging.INFO,
@@ -16,6 +17,7 @@ def ChatPage():
     ollama_client = OllamaClient()
     groq_client = GroqClient()
     mongo_collection = mongo_init()
+    minio_service = MinioClientService()
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
@@ -47,14 +49,26 @@ def ChatPage():
             st.session_state.messages.append({"role":"assistant","content":query})
             resumes = query_to_resume(query,mongo_collection)
             found = False
+            index = 0
             for resume in resumes:
-                st.write(resume)
+                st.subheader(f"📄 Candidate #{resume['_id']}")
+                st.write(resume["summary"])
+                pdf = minio_service.download_file(resume["minio_file_name"])
+                pdf_data = pdf.read()
+                st.download_button(
+                    label="📥 Download CV (PDF)",
+                    data=pdf_data,
+                    file_name=f"{resume["full_name"]}_{resume['_id']}.pdf",
+                    mime='application/pdf',
+                    key=f"download_{index}"
+                )
+                index +=1
+
                 logger.info(resume)
                 found = True
             if not found:
                 logger.warning("Aucun résultat trouvé.")
                 st.write("Aucun resultat trouvé")
 
-            st.write(resumes)
-            st.session_state.messages.append({"role":"assistant","content":str(resumes)})
+            
             
