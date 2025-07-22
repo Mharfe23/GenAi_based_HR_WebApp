@@ -48,9 +48,9 @@ class MinioClientService:
         logger.info(f"Uploaded {secure_file_name} to bucket {self.bucket_name}")
         return secure_file_name
 
-    def download_file(self, object_name, destination_path):
-        self.client.fget_object(self.bucket_name, object_name, destination_path)
-        logger.info(f"Downloaded {object_name} to {destination_path}")
+    def download_file(self, object_name):
+        logger.info(f"Downloaded {object_name}")
+        return self.client.get_object(self.bucket_name, object_name)
 
     def delete_file(self, object_name):
         self.client.remove_object(self.bucket_name, object_name)
