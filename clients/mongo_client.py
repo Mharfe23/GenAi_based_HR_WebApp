@@ -20,7 +20,7 @@ if not DB_PASSWORD:
     raise ValueError("MongoDB credentials are not set in environment variables.")
 
 
-def _mongo_init(db_name="ResumeDB", collection_name="Candidats"):
+def _mongo_candidat_init(db_name="ResumeDB", collection_name="Candidats"):
     """Initialize MongoDB connection and return the specified collection."""
     try:
         mongo_client = MongoClient(uri_mongo, server_api=ServerApi('1'))
@@ -33,7 +33,7 @@ def _mongo_init(db_name="ResumeDB", collection_name="Candidats"):
         raise
 
 ##For Singleton DB connection
-collection_candidat = _mongo_init()
+collection_candidat = _mongo_candidat_init()
 
 
 def mongo_candidat_init():
@@ -42,7 +42,8 @@ def mongo_candidat_init():
 ################# Dictionnary (Set in this case) for skills 
 
 ##For Singleton DB connection
-collection_skills = _mongo_init(collection_name="skills")
+
+collection_skills = _mongo_candidat_init(collection_name="skills")
 
 def add_new_technologies(new_tech, doc_id="tech_stack"):
     """Add new technologies to existing ones """

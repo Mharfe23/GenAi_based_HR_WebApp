@@ -3,11 +3,11 @@ import json
 import os
 
 from utils import extract_resume_text
-from clients.mongo_client import mongo_init
+from clients.mongo_client import mongo_candidat_init
 import logging
 from llms.ollamaClient import OllamaClient
 from llms.groqClient import GroqClient
-from services.resume_query_service import resume_to_json
+from services.llm_service import resume_to_json
 from clients.minio_client import MinioClientService
 
 logging.basicConfig(
@@ -41,7 +41,7 @@ def UploadPage():
             st.session_state.llm_client = ollama_client
 
     llm_client = st.session_state.llm_client
-    collection = mongo_init()
+    collection = mongo_candidat_init()
 
     uploaded_files = st.file_uploader("Upload PDF Resumes", type=["pdf"], accept_multiple_files=True)
 

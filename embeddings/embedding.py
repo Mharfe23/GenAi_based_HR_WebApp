@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 client = genai.Client()
+
+
 texts = [
     "nlp",
     "natural language processing",

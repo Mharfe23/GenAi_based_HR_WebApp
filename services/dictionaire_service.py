@@ -1,2 +1,2 @@
-from clients.mongo_client import mongo_candidat_init
+from clients.mongo_client import 
 

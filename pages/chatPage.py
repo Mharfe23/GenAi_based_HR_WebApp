@@ -1,8 +1,8 @@
 import streamlit as st
 from llms.groqClient import GroqClient
 from llms.ollamaClient import OllamaClient
-from services.resume_query_service import query_to_resume,text_to_mongo_query
-from clients.mongo_client import mongo_init
+from services.llm_service import query_to_resume,text_to_mongo_query
+from clients.mongo_client import mongo_candidat_init
 from clients.minio_client import MinioClientService
 import logging
 logging.basicConfig(
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 def ChatPage():
     ollama_client = OllamaClient()
     groq_client = GroqClient()
-    mongo_collection = mongo_init()
+    mongo_collection = mongo_candidat_init()
     minio_service = MinioClientService()
     if "messages" not in st.session_state:
         st.session_state.messages = []

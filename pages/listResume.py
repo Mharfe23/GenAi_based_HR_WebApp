@@ -1,6 +1,6 @@
 import streamlit as st
 import base64
-from clients.mongo_client import mongo_init
+from clients.mongo_client import mongo_candidat_init
 from clients.minio_client import MinioClientService
 # Example list of PDFs with metadata
 from streamlit_pdf_viewer import pdf_viewer
@@ -8,7 +8,7 @@ from streamlit_pdf_viewer import pdf_viewer
 def listResume():
     st.title("📚 Resume Library")
 
-    collection = mongo_init()
+    collection = mongo_candidat_init()
     minio = MinioClientService()
     if "resumes" not in st.session_state:
         st.session_state.resumes = list(collection.find())
