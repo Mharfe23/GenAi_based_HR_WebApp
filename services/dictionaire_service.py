@@ -89,7 +89,7 @@ def add_skill_if_new(new_skills_dict,existing_skills_set):
     new_skills = new_skills_dict["skills"]
     skills_to_add = []
     for index,new_skill in enumerate(new_skills):
-        lower_skill_val = new_skill["technology"].lower()
+        lower_skill_val = new_skill["technology"].strip().lower()
         if lower_skill_val in existing_skills_set:
             logger.info(f"skill : {new_skill} already exists in the mongodb dictionary ")
             new_skills[index]["technology"] = lower_skill_val

@@ -56,7 +56,7 @@ def find_similar_skill(skill: str):
     return None
 
 def remove_skills_chroma(ids):
-    ids = [id.lower() for id in ids]
+    ids = [id.strip().lower() for id in ids]
     vectorstore.delete(ids)
     logger.info(f"deleted the following skills: {ids}")
 
@@ -66,7 +66,7 @@ def main():
     # skills = ["gcp","owasp"]
     # add_unique_skills_to_chroma(skills)
 
-    query = "GCP"
+    query = "Gcp"
     similar = find_similar_skill(query)
 
     if similar:
@@ -77,5 +77,5 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # result = vectorstore.get("python")
+    # result = vectorstore.get()
     # print("adeed documents "+str(result))
