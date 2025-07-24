@@ -43,7 +43,7 @@ def add_unique_skills_to_chroma(skills: list[str]):
         if result["ids"] != []:
             logger.info(f"⚠️ Document with id {skill} already exists in chroma.")
         else:
-            vectorstore.add_texts(skills,ids=skills)
+            vectorstore.add_texts([skill],ids=[skill])
             logger.info(f"Added {skill} skill to chroma")
 
 
@@ -66,7 +66,7 @@ def main():
     # skills = ["gcp","owasp"]
     # add_unique_skills_to_chroma(skills)
 
-    query = "google cloud platform"
+    query = "GCP"
     similar = find_similar_skill(query)
 
     if similar:
