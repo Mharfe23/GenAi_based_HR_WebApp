@@ -1,5 +1,5 @@
 from langchain_community.vectorstores import Chroma
-from google_langchain_chroma_Adapter import FixedGoogleEmbedding
+from embeddings.google_langchain_chroma_Adapter import FixedGoogleEmbedding
 from dotenv import load_dotenv
 from chromadb.errors import IDAlreadyExistsError
 import logging
@@ -34,31 +34,39 @@ retriever = vectorstore.as_retriever(
     }
 )
 
-def add_unique_skills(skills: list[str]):
+def add_unique_skills_to_chroma(skills: list[str]):
     """Adds skills if they don't already exist."""
     
-    ids = [skill for skill in skills]
-    for id in ids:
-        if vectorstore.get(ids):
-            logger.warning(f"⚠️ Document with id {id} already exists.")
+    
+    for skill in skills:
+        result = vectorstore.get(skill)
+        if result["ids"] != []:
+            logger.info(f"⚠️ Document with id {skill} already exists in chroma.")
         else:
-            vectorstore.add_texts(skills, ids=id)
-            logger.info(f"Added {id} skill to chroma")
+            vectorstore.add_texts(skills,ids=skills)
+            logger.info(f"Added {skill} skill to chroma")
 
 
 def find_similar_skill(skill: str):
     """Finds a similar skill."""
     results = retriever.invoke(skill)
     if results:
-        return results[0]
+        return results[0].page_content
+    logger.info(f"Didnt find similar for {skill}")
     return None
+
+def remove_skills_chroma(ids):
+    ids = [id.lower() for id in ids]
+    vectorstore.delete(ids)
+    logger.info(f"deleted the following skills: {ids}")
+
 
 
 def main():
-    skills = ["python", "java", "springboot"]
-    add_unique_skills(skills)
+    # skills = ["gcp","owasp"]
+    # add_unique_skills_to_chroma(skills)
 
-    query = "jee"
+    query = "google cloud platform"
     similar = find_similar_skill(query)
 
     if similar:
@@ -66,10 +74,8 @@ def main():
     else:
         print(f"❌ No similar skill found for '{query}'")
 
-    result = vectorstore.get()
-    print("adeed documents "+str(result))
 
 if __name__ == "__main__":
     main()
-    # result = vectorstore.get()
+    # result = vectorstore.get("python")
     # print("adeed documents "+str(result))

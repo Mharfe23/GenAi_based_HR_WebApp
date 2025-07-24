@@ -112,7 +112,7 @@ def main():
 
         query = text_to_mongo_query(question, groq_client)
         if not query:
-            logger.error("Couldn't find the json in the llm response")
+            logger.error("Couldn't find the llm response")
         try:
             dict_query = yaml.safe_load(query)
             logger.info("Query: "+ str(dict_query))

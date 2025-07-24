@@ -45,7 +45,7 @@ def mongo_candidat_init():
 
 collection_skills = _mongo_candidat_init(collection_name="skills")
 
-def add_new_technologies(new_tech, doc_id="tech_stack"):
+def add_new_skills_mongo(new_tech, doc_id="tech_stack"):
     """Add new technologies to existing ones """
     collection_skills.update_one(
         {"_id":doc_id},
@@ -55,6 +55,7 @@ def add_new_technologies(new_tech, doc_id="tech_stack"):
                 }
         }
     )
+    logger.info(f"Added {new_tech} to mongo skills")
 
 def replace_all_technologies(tech_list, doc_id="tech_stack"):
     """ Replace the whole technologies list"""
@@ -65,7 +66,7 @@ def replace_all_technologies(tech_list, doc_id="tech_stack"):
     )
 
 
-def init_techs_if_not_exist(tech_list, doc_id="tech_stack"):
+def init_techs_if_not_exist_mongo(tech_list, doc_id="tech_stack"):
     """Init the first technologies list"""
     existing_doc = collection_skills.find_one({"_id": "tech_stack"})
     if not existing_doc:
@@ -76,3 +77,46 @@ def init_techs_if_not_exist(tech_list, doc_id="tech_stack"):
         logger.info("Inserted new tech stack document.")
     else:
         logger.info("Document already exists. No insert performed.")
+
+def get_skills_mongo():
+    result = dict(collection_skills.find_one())
+    return list(result["technologies"])
+
+def remove_skills_mongo(tech_list: list[str], doc_id="tech_stack"):
+    for tech_name in tech_list:
+        result = collection_skills.update_one(
+            {"_id": doc_id},
+            {"$pull": {"technologies": tech_name.lower()}}
+        )
+        if result.modified_count > 0:
+            logger.info(f"Removed '{tech_name.lower()}' from technologies.")
+        else:
+            logger.info(f"'{tech_name.lower()}' not found in technologies (mongodb).")
+
+
+def main():
+    initial_techs = ["Python", "JavaScript", "React"]
+
+    # 1. Initialisation si le document n'existe pas
+    init_techs_if_not_exist_mongo(initial_techs)
+
+    # 2. Ajouter de nouvelles technologies (certaines nouvelles, certaines déjà présentes)
+    new_techs = ["Node.js", "Python", "Docker"]
+    add_new_skills_mongo(new_techs)
+
+    # 3. Afficher l’état actuel du document
+    print("\n--- After Adding New Technologies ---")
+    for doc in get_skills_mongo():
+        print(doc)
+
+    # 4. Remplacer toutes les technologies (écrase la liste précédente)
+    replacement_techs = ["Go", "Rust", "Kubernetes"]
+    replace_all_technologies(replacement_techs)
+
+    # 5. Afficher l’état final
+    print("\n--- After Replacing Technologies ---")
+    for doc in get_skills_mongo():
+        print(doc)
+
+if __name__ == "__main__":
+    main()
