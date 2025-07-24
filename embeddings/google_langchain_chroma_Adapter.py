@@ -13,6 +13,7 @@ class FixedGoogleEmbedding(GoogleGenerativeAiEmbeddingFunction):
                 embeddings.append(emb)
             else:
                 raise TypeError(f"Unexpected embedding type: {type(emb)}")
+        print("document embeded with Gemini")
         return embeddings
 
     def embed_query(self, text: str) -> list[float]:
