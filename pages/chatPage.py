@@ -53,7 +53,7 @@ def ChatPage():
             found = False
             index = 0
             for resume in resumes:
-                st.subheader(f"📄 Candidate #{resume['_id']}")
+                st.subheader(f"📄 Candidate {resume.get("full_name","") or ""} #{resume['_id']}")
                 st.write(resume["summary"])
                 pdf = minio_service.download_file(resume["minio_file_name"])
                 pdf_data = pdf.read()

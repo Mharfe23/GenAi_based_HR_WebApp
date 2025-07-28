@@ -71,6 +71,8 @@ def UploadPage():
                               
                     try:
                         extracted_data = json.loads(cleaned_json)
+                        extracted_data["current_role_experience"] = max(extracted_data['roles_experience'], key=lambda r: r['years_experience'])
+                        
                         logger.debug(f"Extracted data BEFORE similarity replace :{extracted_data}")
                         add_skill_if_new_and_replace_similar_ones(extracted_data, existing_skills_set=existing_skills)
                         logger.debug(f"Extracted data AFTER similarity replace :{extracted_data}")

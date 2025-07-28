@@ -18,7 +18,6 @@ def listResume():
     
     for index, pdf_info in enumerate(resumes):
         # Load PDF
-
         # Metadata display
         max_experience = max(pdf_info['roles_experience'],key=lambda x:x['years_experience'])
         st.subheader(f"📄 {max_experience["role"]} : {max_experience["years_experience"]}  years of experience")
