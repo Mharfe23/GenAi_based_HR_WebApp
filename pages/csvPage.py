@@ -14,8 +14,7 @@ def CsvPage():
     candidates = list(collection_candidat.find())
 
     # 1. SEARCH
-    st.title("📄 Candidate Table with PDF Preview")
-    search_query = st.text_input("🔍 Search by name, email or role").lower()
+    search_query = st.text_input("🔍 Search by name, email ,role or summary").lower()
     filtered_candidates = candidates
     
     # 2. FILTER
@@ -24,7 +23,8 @@ def CsvPage():
             c for c in candidates
             if search_query in (c.get("full_name") or "").lower()
             or search_query in (c.get("email") or "").lower()
-            or search_query in (c.get("current_role_experience") or "").lower()
+            or search_query in (c.get("current_role_experience")["role"] or "").lower()
+            or search_query in (c.get("summary").lower())
         ]
 
     # Extract summary table
@@ -37,6 +37,7 @@ def CsvPage():
             "Current Role": c.get("current_role_experience", {}).get("role", ""),
             "Current Exp (yrs)": c.get("current_role_experience", {}).get("years_experience", ""),
             "Summary": c.get("summary",""),
+            "skills": list({skill["technology"] for skill in c["skills"]})
         })
 
     summary_df = pd.DataFrame(summary_rows)
@@ -60,7 +61,6 @@ def CsvPage():
             st.markdown(f"**Summary**:{candidate.get("summary","")}")
             st.markdown(f"**Current Role**: {candidate.get('current_role_experience', {}).get('role', '')}")
             st.markdown(f"**Years in Current Role**: {candidate.get('current_role_experience', {}).get('years_experience', '')}")
-            
             for section in ["skills", "roles_experience", "education"]:
                 if section in candidate:
                     st.markdown(f"**{section.replace('_', ' ').title()}**")
