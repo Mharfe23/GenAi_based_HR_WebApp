@@ -66,7 +66,7 @@ def main():
     # skills = ["gcp","owasp"]
     # add_unique_skills_to_chroma(skills)
 
-    query = "Gcp"
+    query = "Ai"
     similar = find_similar_skill(query)
 
     if similar:

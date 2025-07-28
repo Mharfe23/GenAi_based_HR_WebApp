@@ -9,7 +9,7 @@ from llms.ollamaClient import OllamaClient
 from llms.groqClient import GroqClient
 from services.llm_service import resume_to_json
 from clients.minio_client import MinioClientService
-
+from services.dictionaire_service import add_skill_if_new_and_replace_similar_ones
 logging.basicConfig(
     level=logging.WARNING,
     format='[%(levelname)s] %(message)s'
@@ -70,6 +70,10 @@ def UploadPage():
                               
                     try:
                         extracted_data = json.loads(cleaned_json)
+                        logger.debug(f"Extracted data BEFORE similarity replace :{extracted_data}")
+                        add_skill_if_new_and_replace_similar_ones(extracted_data)
+                        logger.debug(f"Extracted data AFTER similarity replace :{extracted_data}")
+                        
                     except json.JSONDecodeError:
                         extracted_data = {
                             "error": "Groq model returned invalid JSON.",

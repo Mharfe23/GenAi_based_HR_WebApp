@@ -49,7 +49,7 @@ def resume_to_json(resume_text, llm_client):
 
     return clean_json(result_json)
 
-def text_to_mongo_query(text, llm_client):
+def text_to_mongo_query(text, llm_client, skills_dict):
     prompt = f"""
     You are a professional backend assistant specializing in MongoDB.
 
@@ -60,6 +60,9 @@ def text_to_mongo_query(text, llm_client):
     - phone: string
     - address: string or null
     - skills: list of objects: {{ "technology": string, "years_experience": number or null }}
+
+    ! for the technology attribute in skills those are the only available technologies : '{skills_dict}'
+
     - roles_experience: list of objects: {{ "role": string, "years_experience": number or null }}
     - current_role_experience: object {{ "role": string, "years_experience": number }}
     - education: a list of {{ "degree": string, "institution": string, "year_completed": string }}
@@ -105,12 +108,14 @@ def main():
     ollama_client = OllamaClient()
     groq_client = GroqClient()
 
+    skills = {"java" , "python" , "pandas" ,"seaborn", "machine learning"}
     while True:
         question = input("Entrer votre question ou q pour terminer: ")
+        #i am looking for a data analyst
         if question == "q":
             break
 
-        query = text_to_mongo_query(question, groq_client)
+        query = text_to_mongo_query(question, groq_client, skills)
         if not query:
             logger.error("Couldn't find the llm response")
         try:

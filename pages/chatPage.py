@@ -2,7 +2,7 @@ import streamlit as st
 from llms.groqClient import GroqClient
 from llms.ollamaClient import OllamaClient
 from services.llm_service import query_to_resume,text_to_mongo_query
-from clients.mongo_client import mongo_candidat_init
+from clients.mongo_client import mongo_candidat_init, get_skills_mongo
 from clients.minio_client import MinioClientService
 import logging
 logging.basicConfig(
@@ -18,6 +18,8 @@ def ChatPage():
     groq_client = GroqClient()
     mongo_collection = mongo_candidat_init()
     minio_service = MinioClientService()
+    dict_skills = get_skills_mongo()
+
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
@@ -44,7 +46,7 @@ def ChatPage():
         st.session_state.messages.append({"role":"user","content":question})
   
         with st.chat_message("assistant"):
-            query = text_to_mongo_query(question,llm_client)
+            query = text_to_mongo_query(question, llm_client, dict_skills)
             st.write(query)
             st.session_state.messages.append({"role":"assistant","content":query})
             resumes = query_to_resume(query,mongo_collection)

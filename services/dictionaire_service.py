@@ -23,7 +23,7 @@ primary_skills = [
     "docker", "kubernetes", "jenkins", "github actions", "gitlab ci/cd", "terraform", "ansible", "circleci",
 
     # cloud platforms
-    "amazon web services (aws)", "microsoft azure", "google cloud platform (gcp)", "firebase", "heroku", "vercel", "netlify",
+    "amazon web services aws", "microsoft azure", "google cloud platform gcp", "firebase", "heroku", "vercel", "netlify",
 
     # version control
     "git", "github", "gitlab", "bitbucket",
@@ -47,7 +47,7 @@ primary_skills = [
     "microservices", "monolithic architecture", "event-driven architecture", "mvc", "clean architecture", "design patterns",
 
     # soft skills & practices
-    "agile", "scrum", "devops", "tdd", "clean code", "system design", "problem solving", "code review",
+    "agile", "scrum", "devops", "test driven development",
 
     # security
     "owasp", "tls/ssl", "oauth 2.0", "input validation", "role-based access control (rbac)",
@@ -74,7 +74,7 @@ def init_primary_skills_in_dict():
     add_unique_skills_to_chroma(primary_skills)
     init_techs_if_not_exist_mongo(primary_skills)
 
-def add_skill_if_new(new_skills_dict,existing_skills_set):
+def add_skill_if_new_and_replace_similar_ones(new_skills_dict,existing_skills_set):
     """ 
     if the skill doesn't exist in existing skills , search for similar option if it exists replace it with existing one 
     if not add it to existing ones
@@ -114,26 +114,27 @@ def main():
 
     # Step 2: Get existing skills from MongoDB (to avoid duplicates)
     existing_skills = get_skills_mongo()
-    existing_skills_set = set(skill.lower() for skill in existing_skills)
+    existing_skills_set = set(skill.strip().lower() for skill in existing_skills)
+    print(existing_skills_set)
 
     # Step 3: Simulate a new candidate with new skills
-    candidate_skills_dict = {
-        "skills": [
-            {"technology": "PyThon"},
-            {"technology": "LangChain"},
-            {"technology": "SpringBoot"},
-            {"technology": "Data Visualisation"},  # likely a new or misspelled one
-            {"technology": "React.js"},            # existing
-            {"technology": "GCP"}                  # should match Google Cloud Platform
-        ]
-    }
+    # candidate_skills_dict = {
+    #     "skills": [
+    #         {"technology": "PyThon"},
+    #         {"technology": "LangChain"},
+    #         {"technology": "SpringBoot"},
+    #         {"technology": "Data Visualisation"}, 
+    #         {"technology": "React.js"},            # existing
+    #         {"technology": "GCP"}                  # should match Google Cloud Platform
+    #     ]
+    # }
 
-    # Step 4: Run the matcher function
-    add_skill_if_new(candidate_skills_dict, existing_skills_set)
+    # # Step 4: Run the matcher function
+    # add_skill_if_new(candidate_skills_dict, existing_skills_set)
 
-    # Step 5: Show the updated candidate skill list
-    print("\n🔍 Final candidate skills (after similarity resolution):")
-    print(candidate_skills_dict["skills"])
+    # # Step 5: Show the updated candidate skill list
+    # print("\n🔍 Final candidate skills (after similarity resolution):")
+    # print(candidate_skills_dict["skills"])
 
 if __name__ == "__main__":
     #delete_skills_from_mongo_chroma(["LangChain","Data Visualisation","GCP"])
