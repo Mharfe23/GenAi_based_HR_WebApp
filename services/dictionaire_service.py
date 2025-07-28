@@ -32,7 +32,7 @@ primary_skills = [
     "junit", "pytest", "jest", "selenium", "cypress", "mockito", "postman",
 
     # data & ai
-    "pandas", "numpy", "scikit-learn", "tensorflow", "pytorch", "keras", "opencv", "hugging face", "langchain",
+    "artificial intelligence","pandas", "numpy", "scikit-learn", "tensorflow", "pytorch", "keras", "opencv", "hugging face", "langchain","Ai agent",
 
     # data engineering
     "apache kafka", "apache spark", "airflow", "hadoop", "dbt", "snowflake", "bigquery",

@@ -9,7 +9,7 @@ from llms.ollamaClient import OllamaClient
 from llms.groqClient import GroqClient
 from services.llm_service import resume_to_json
 from clients.minio_client import MinioClientService
-from services.dictionaire_service import add_skill_if_new_and_replace_similar_ones
+from services.dictionaire_service import add_skill_if_new_and_replace_similar_ones, get_skills_mongo
 logging.basicConfig(
     level=logging.WARNING,
     format='[%(levelname)s] %(message)s'
@@ -32,6 +32,7 @@ def UploadPage():
     ollama_client = OllamaClient()
     groq_client = GroqClient()
     minio_client = MinioClientService()
+    existing_skills = get_skills_mongo()
 
     llm_choice = st.radio("Choose LLM Client:",("Groq API llama3.3_70B","llama3.2 3B(local)"))
     match llm_choice:
@@ -71,9 +72,9 @@ def UploadPage():
                     try:
                         extracted_data = json.loads(cleaned_json)
                         logger.debug(f"Extracted data BEFORE similarity replace :{extracted_data}")
-                        add_skill_if_new_and_replace_similar_ones(extracted_data)
+                        add_skill_if_new_and_replace_similar_ones(extracted_data, existing_skills_set=existing_skills)
                         logger.debug(f"Extracted data AFTER similarity replace :{extracted_data}")
-                        
+
                     except json.JSONDecodeError:
                         extracted_data = {
                             "error": "Groq model returned invalid JSON.",
