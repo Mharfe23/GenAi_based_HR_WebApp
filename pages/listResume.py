@@ -13,10 +13,19 @@ def listResume():
     if "resumes" not in st.session_state:
         st.session_state.resumes = list(collection.find())
     
+    st.title("📄 Candidate Table with PDF Preview")
+    search_query = st.text_input("🔍 Search by name, email ,role or summary").lower()
+
     resumes = st.session_state.resumes
+    filtered_resumes = [
+        resum for resum in resumes 
+        if search_query in (resum.get("full_name") or "").lower()
+        or search_query in (resum.get("email") or "").lower()
+        or search_query in (resum.get("current_role_experience")["role"] or "").lower()
+        or search_query in (resum.get("summary").lower())
+    ]
     
-    
-    for index, pdf_info in enumerate(resumes):
+    for index, pdf_info in enumerate(filtered_resumes):
         # Load PDF
         # Metadata display
         max_experience = max(pdf_info['roles_experience'],key=lambda x:x['years_experience'])
