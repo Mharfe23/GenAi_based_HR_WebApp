@@ -39,6 +39,19 @@ collection_candidat = _mongo_candidat_init()
 def mongo_candidat_init():
     return collection_candidat
 
+
+def check_mongo_duplicate(email="", full_name=""):
+    if email is None and full_name is None:
+        return False
+    query = {
+        "$or": [
+            {"email": email},
+            {"full_name": full_name}
+        ]
+    }
+    result = collection_candidat.find_one(query)
+    return result is not None
+
 ################# Dictionnary (Set in this case) for skills 
 
 ##For Singleton DB connection
@@ -118,5 +131,6 @@ def main():
     for doc in get_skills_mongo():
         print(doc)
 
-if __name__ == "__main__":
-    main()
+#if __name__ == "__main__":
+    #main()
+    #print(check_mongo_duplicate(full_name="Kanoja Kumar Mishr"))
