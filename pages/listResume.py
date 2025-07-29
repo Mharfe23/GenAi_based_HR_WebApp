@@ -18,11 +18,18 @@ def listResume():
 
     resumes = st.session_state.resumes
     filtered_resumes = [
-        resum for resum in resumes 
-        if search_query in (resum.get("full_name") or "").lower()
-        or search_query in (resum.get("email") or "").lower()
-        or search_query in (resum.get("current_role_experience")["role"] or "").lower()
-        or search_query in (resum.get("summary").lower())
+        c for c in resumes
+        if search_query in (c.get("full_name") or "").lower()
+        or (
+        isinstance(c.get("email"), list)
+        and any(search_query in (email or "").lower() for email in c["email"]) ##the case when someone put many emails in a resume
+        )
+        or (
+            isinstance(c.get("email"), str)
+            and search_query in (c.get("email") or "").lower()
+        )
+        or search_query in (c.get("current_role_experience")["role"] or "").lower()
+        or search_query in (c.get("summary") or "").lower()
     ]
     
     for index, pdf_info in enumerate(filtered_resumes):

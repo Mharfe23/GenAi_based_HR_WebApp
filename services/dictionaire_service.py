@@ -14,10 +14,10 @@ primary_skills = [
     "python", "java", "c++", "c#", "javascript", "typescript", "go (golang)", "rust", "kotlin", "swift", "sql", "bash",
 
     # web development
-    "html", "css", "react.js", "angular", "vue.js", "next.js", "node.js", "express.js", "django", "flask", "spring boot",
+    "html", "css","nodejs","jquery", "react.js", "angular", "vue.js", "next.js", "node.js", "express.js", "django", "flask", "spring boot",
 
     # databases
-    "mysql", "postgresql", "sqlite", "mongodb", "redis", "oracle database", "microsoft sql server",
+    "mysql", "postgresql", "sqlite", "mongodb", "redis", "oracle database (pl/sql)", "microsoft sql server","sql","nosql"
 
     # devops & ci/cd
     "docker", "kubernetes", "jenkins", "github actions", "gitlab ci/cd", "terraform", "ansible", "circleci",
@@ -26,13 +26,13 @@ primary_skills = [
     "amazon web services aws", "microsoft azure", "google cloud platform gcp", "firebase", "heroku", "vercel", "netlify",
 
     # version control
-    "git", "github", "gitlab", "bitbucket",
+    "git/github", "gitlab", "bitbucket",
 
     # testing
     "junit", "pytest", "jest", "selenium", "cypress", "mockito", "postman",
 
     # data & ai
-    "artificial intelligence","pandas", "numpy", "scikit-learn", "tensorflow", "pytorch", "keras", "opencv", "hugging face", "langchain","Ai agent",
+    "artificial intelligence","machine learning","deep learning","pandas", "numpy", "scikit-learn", "tensorflow", "pytorch", "keras", "opencv", "hugging face", "langchain","Ai agent",
 
     # data engineering
     "apache kafka", "apache spark", "airflow", "hadoop", "dbt", "snowflake", "bigquery",
@@ -58,8 +58,8 @@ primary_skills = [
     # file formats
     "json", "yaml", "xml", "csv", "parquet",
 
-    # operating systems
-    #"linux", "ubuntu", "macos", "windows",
+
+    "linux","unix", "ubuntu", "macos", "windows",
 
     # misc
     "shell scripting", "api integration", "continuous deployment", "monitoring & logging", "nginx", "prometheus", "grafana"
@@ -139,4 +139,5 @@ def main():
 if __name__ == "__main__":
     #delete_skills_from_mongo_chroma(["LangChain","Data Visualisation","GCP"])
     main()
+
 # python -m services.dictionaire_service

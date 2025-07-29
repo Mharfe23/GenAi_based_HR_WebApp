@@ -3,7 +3,7 @@ import json
 import os
 
 from utils import extract_resume_text
-from clients.mongo_client import mongo_candidat_init
+from clients.mongo_client import mongo_candidat_init, check_mongo_duplicate
 import logging
 from llms.ollamaClient import OllamaClient
 from llms.groqClient import GroqClient
@@ -34,6 +34,9 @@ def UploadPage():
     minio_client = MinioClientService()
     existing_skills = get_skills_mongo()
 
+    if 'processed_files' not in st.session_state:
+        st.session_state.processed_files = set()
+
     llm_choice = st.radio("Choose LLM Client:",("Groq API llama3.3_70B","llama3.2 3B(local)"))
     match llm_choice:
         case "Groq API llama3.3_70B":
@@ -48,6 +51,10 @@ def UploadPage():
 
     if uploaded_files:
         for uploaded_file in uploaded_files:
+            if uploaded_file.name in st.session_state.processed_files:
+                continue  # Skip already processed
+            st.session_state.processed_files.add(uploaded_file.name)
+            
             st.subheader(f"Processing: {uploaded_file.name}")
 
             try:
@@ -73,6 +80,11 @@ def UploadPage():
                         extracted_data = json.loads(cleaned_json)
                         extracted_data["current_role_experience"] = max(extracted_data['roles_experience'], key=lambda r: r['years_experience'])
                         
+                        ## Check if the email/full_name in mongo is a duplicate
+                        if check_mongo_duplicate(email=extracted_data["email"], full_name=extracted_data["full_name"]):
+                            st.warning(f"the email {extracted_data["email"]} or the name {extracted_data["full_name"]} already exists")
+                            return
+                        #Modify the resume data based on predefined skills
                         logger.debug(f"Extracted data BEFORE similarity replace :{extracted_data}")
                         add_skill_if_new_and_replace_similar_ones(extracted_data, existing_skills_set=existing_skills)
                         logger.debug(f"Extracted data AFTER similarity replace :{extracted_data}")
@@ -94,8 +106,8 @@ def UploadPage():
                         logger.exception("Error: "+str(e))
 
 
-                    st.write("🛠️ **Extracted Structured Data:**")
-                    st.json(extracted_data)
+                    # st.write("🛠️ **Extracted Structured Data:**")
+                    # st.json(extracted_data)
                     st.divider()
 
                 except Exception as e:
