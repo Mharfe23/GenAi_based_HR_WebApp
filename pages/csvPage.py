@@ -22,9 +22,16 @@ def CsvPage():
         filtered_candidates = [
             c for c in candidates
             if search_query in (c.get("full_name") or "").lower()
-            or search_query in (c.get("email") or "").lower()
+            or (
+            isinstance(c.get("email"), list)
+            and any(search_query in (email or "").lower() for email in c["email"]) ##the case when someone put many emails in a resume
+            )
+            or (
+                isinstance(c.get("email"), str)
+                and search_query in (c.get("email") or "").lower()
+            )
             or search_query in (c.get("current_role_experience")["role"] or "").lower()
-            or search_query in (c.get("summary").lower())
+            or search_query in (c.get("summary") or "").lower()
         ]
 
     # Extract summary table
@@ -36,7 +43,7 @@ def CsvPage():
             "Phone": c.get("phone", ""),
             "Current Role": c.get("current_role_experience", {}).get("role", ""),
             "Current Exp (yrs)": c.get("current_role_experience", {}).get("years_experience", ""),
-            "Summary": c.get("summary",""),
+            "Summary": (c.get("summary","") or ""),
             "skills": list({skill["technology"] for skill in c["skills"]})
         })
 
