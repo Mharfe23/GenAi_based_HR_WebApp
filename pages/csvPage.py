@@ -1,5 +1,4 @@
 import streamlit as st
-import json
 import pandas as pd
 from clients.mongo_client import mongo_candidat_init
 

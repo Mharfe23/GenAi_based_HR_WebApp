@@ -2,12 +2,7 @@ from clients.mongo_client import get_skills_mongo, add_new_skills_mongo, init_te
 from embeddings.chroma_gemini_embedding import add_unique_skills_to_chroma, find_similar_skill,remove_skills_chroma
 import logging
 
-logging.basicConfig(
-    level=logging.WARNING,
-    format='[%(levelname)s] %(message)s'
-)
 logger = logging.getLogger(__name__)
-
 
 primary_skills = [
     # programming languages
