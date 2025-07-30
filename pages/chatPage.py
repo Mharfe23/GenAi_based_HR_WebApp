@@ -4,12 +4,14 @@ from llms.ollamaClient import OllamaClient
 from services.llm_service import query_to_resume,text_to_mongo_query
 from clients.mongo_client import mongo_candidat_init, get_skills_mongo
 from clients.minio_client import MinioClientService
+
 import logging
 
 logger = logging.getLogger(__name__)
 
 
 def ChatPage():
+
     ollama_client = OllamaClient()
     groq_client = GroqClient()
     mongo_collection = mongo_candidat_init()
