@@ -1,13 +1,9 @@
 from clients.mongo_client import get_skills_mongo, add_new_skills_mongo, init_techs_if_not_exist_mongo,remove_skills_mongo
 from embeddings.chroma_gemini_embedding import add_unique_skills_to_chroma, find_similar_skill,remove_skills_chroma
 import logging
+import json 
 
-logging.basicConfig(
-    level=logging.WARNING,
-    format='[%(levelname)s] %(message)s'
-)
 logger = logging.getLogger(__name__)
-
 
 primary_skills = [
     # programming languages
@@ -17,7 +13,7 @@ primary_skills = [
     "html", "css","nodejs","jquery", "react.js", "angular", "vue.js", "next.js", "node.js", "express.js", "django", "flask", "spring boot",
 
     # databases
-    "mysql", "postgresql", "sqlite", "mongodb", "redis", "oracle database (pl/sql)", "microsoft sql server","sql","nosql"
+    "mysql", "postgresql", "sqlite", "mongodb", "redis", "oracle database (pl/sql)", "microsoft sql server","sql","nosql",
 
     # devops & ci/cd
     "docker", "kubernetes", "jenkins", "github actions", "gitlab ci/cd", "terraform", "ansible", "circleci",
@@ -71,8 +67,11 @@ def delete_skills_from_mongo_chroma(ids):
     
 
 def init_primary_skills_in_dict():
-    add_unique_skills_to_chroma(primary_skills)
     init_techs_if_not_exist_mongo(primary_skills)
+    add_unique_skills_to_chroma(primary_skills)
+
+logger.info("Init primary skills mongo+chroma")
+init_primary_skills_in_dict()
 
 def add_skill_if_new_and_replace_similar_ones(new_skills_dict,existing_skills_set):
     """ 
@@ -91,7 +90,13 @@ def add_skill_if_new_and_replace_similar_ones(new_skills_dict,existing_skills_se
     for index,new_skill in enumerate(new_skills):
         lower_skill_val = new_skill["technology"].strip().lower()
         if lower_skill_val in existing_skills_set:
-            logger.info(f"skill : {new_skill} already exists in the mongodb dictionary ")
+            logger.info(json.dumps({
+                "event": "SKILL_EXISTS",
+                "technology": new_skill["technology"],
+                "status": "exists",
+                "source": "skill_dict_check"
+            }))
+
             new_skills[index]["technology"] = lower_skill_val
             continue
 
@@ -99,14 +104,29 @@ def add_skill_if_new_and_replace_similar_ones(new_skills_dict,existing_skills_se
 
         if similar:
             new_skills[index]["technology"] = similar
-            logger.info(f"{lower_skill_val} found similar : {similar}")
+            logger.info(json.dumps({
+                "event": "SIMILAR_FOUND",
+                "input": lower_skill_val,
+                "matched_with": similar,
+                "status": "replaced",
+                "source": "skill_dict_check"
+            }))
         else:
             skills_to_add.append(lower_skill_val)
 
     if skills_to_add:
-        logger.info(f"adding new {skills_to_add} technologies(skills)")
+        logger.info(json.dumps({
+            "event": "NEW_SKILLS_ADDED",
+            "skills": skills_to_add,
+            "status": "added",
+            "source": "skill_dict_check"
+        }))
         add_new_skills_mongo(skills_to_add)
         add_unique_skills_to_chroma(skills_to_add)
+
+
+## INIT primary skills
+
 
 def main():
     # Step 1: Initialize the system with primary skills if needed

@@ -1,13 +1,8 @@
 from langchain_community.vectorstores import Chroma
 from embeddings.google_langchain_chroma_Adapter import FixedGoogleEmbedding
 from dotenv import load_dotenv
-from chromadb.errors import IDAlreadyExistsError
 import logging
 
-logging.basicConfig(
-    level=logging.WARNING,
-    format='[%(levelname)s] %(message)s'
-)
 logger = logging.getLogger(__name__)
 
 # Load env variables (must include GOOGLE_API_KEY)

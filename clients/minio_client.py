@@ -14,7 +14,7 @@ MINIO_ENDPOINT = os.getenv('MINIO_ENDPOINT', 'localhost:9000')
 
 logging.basicConfig(
     level=logging.INFO,
-    format='[%(levelname)s] %(message)s'
+    format='%(asctime)s %(levelname)s %(message)s'
 )
 logger = logging.getLogger(__name__)
 

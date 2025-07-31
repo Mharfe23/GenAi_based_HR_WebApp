@@ -13,17 +13,16 @@ logger = logging.getLogger(__name__)
 
 
 dotenv.load_dotenv()
-DB_PASSWORD = os.environ.get("MONGO_PASS")
-uri_mongo = f"mongodb+srv://mharfe:{DB_PASSWORD}@clusterstage2a.ceideum.mongodb.net/?retryWrites=true&w=majority&appName=ClusterStage2A"
+MONGO_ENDPOINT = os.environ.get("MONGO_ENDPOINT")
 
-if not DB_PASSWORD:
+if not MONGO_ENDPOINT:
     raise ValueError("MongoDB credentials are not set in environment variables.")
 
 
 def _mongo_candidat_init(db_name="ResumeDB", collection_name="Candidats"):
     """Initialize MongoDB connection and return the specified collection."""
     try:
-        mongo_client = MongoClient(uri_mongo, server_api=ServerApi('1'))
+        mongo_client = MongoClient(MONGO_ENDPOINT, server_api=ServerApi('1'))
         db = mongo_client[db_name]
         collection = db[collection_name]
         logger.info(f"MongoDB connection established successfully for collection: {collection_name}.")
@@ -134,3 +133,4 @@ def main():
 #if __name__ == "__main__":
     #main()
     #print(check_mongo_duplicate(full_name="Kanoja Kumar Mishr"))
+    

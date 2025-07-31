@@ -7,12 +7,7 @@ from llms.groqClient import GroqClient
 from llms.ollamaClient import OllamaClient
 
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='[%(levelname)s] %(message)s'
-)
 logger = logging.getLogger(__name__)
-
 
 
 def resume_to_json(resume_text, llm_client):
