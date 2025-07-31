@@ -26,7 +26,10 @@ AI Talent Scout is a Streamlit-based web application designed to streamline the 
 - **Vector Search**: ChromaDB + Google Generative AI Embeddings
 - **LLMs**: Groq API (LLaMA 3.3), Ollama (local)
 - **Logging/Monitoring**: ELK Stack (Elasticsearch, Logstash, Kibana)
-- **PDF Parsing**: PyPDFLoader
+
+
+![Frontend App Structure](./static/Global_architecture.png)  
+*AI Talent Scout Global Architecture*
 
 ---
 
