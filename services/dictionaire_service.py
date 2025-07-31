@@ -13,7 +13,7 @@ primary_skills = [
     "html", "css","nodejs","jquery", "react.js", "angular", "vue.js", "next.js", "node.js", "express.js", "django", "flask", "spring boot",
 
     # databases
-    "mysql", "postgresql", "sqlite", "mongodb", "redis", "oracle database (pl/sql)", "microsoft sql server","sql","nosql"
+    "mysql", "postgresql", "sqlite", "mongodb", "redis", "oracle database (pl/sql)", "microsoft sql server","sql","nosql",
 
     # devops & ci/cd
     "docker", "kubernetes", "jenkins", "github actions", "gitlab ci/cd", "terraform", "ansible", "circleci",
