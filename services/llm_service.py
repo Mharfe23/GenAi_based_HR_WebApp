@@ -96,8 +96,6 @@ def query_to_resume(query,collection):
     dict_query = yaml.safe_load(query)
     return collection.find(dict_query)
 
-############################ Dictionnary utils
-
 
 
 

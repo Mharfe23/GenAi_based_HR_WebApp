@@ -22,7 +22,7 @@ def ChatPage():
 
     if "messages" not in st.session_state:
         st.session_state.messages = []
-
+    
     st.logo("./static/DXC_Logo.png",size="large")
     st.image("./static/DXC_Logo.png",width=120)
     st.title("HR Resume Assistant")
@@ -39,38 +39,54 @@ def ChatPage():
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.write(message["content"])
-    
+            # if message["role"] == "assistant" and "resumes" in message:
+            #     display_resumes(message["resumes"], minio_service)
+
     if question := st.chat_input("Enter your question"):
         with st.chat_message("user"):
             st.markdown(question)
-        st.session_state.messages.append({"role":"user","content":question})
+        st.session_state.messages.append({
+            "role":"user",
+            "content":question
+            })
   
         with st.chat_message("assistant"):
             query = text_to_mongo_query(question, llm_client, dict_skills)
             st.write(query)
-            st.session_state.messages.append({"role":"assistant","content":query})
             resumes = query_to_resume(query,mongo_collection)
-            found = False
-            index = 0
-            for resume in resumes:
-                st.subheader(f"📄 Candidate {resume.get("full_name","") or ""} #{resume['_id']}")
-                st.write(resume["summary"])
-                pdf = minio_service.download_file(resume["minio_file_name"])
-                pdf_data = pdf.read()
-                st.download_button(
-                    label="📥 Download CV (PDF)",
-                    data=pdf_data,
-                    file_name=f"{resume["full_name"]}_{resume['_id']}.pdf",
-                    mime='application/pdf',
-                    key=f"download_{index}"
+            st.session_state.messages.append(
+                {"role":"assistant",
+                 "content":query,
+                 "resumes":resumes
+                 }
                 )
-                index +=1
+            
+            display_resumes(resumes,minio_service)
+           
+    
 
-                logger.info(resume)
-                found = True
-            if not found:
-                logger.warning("Aucun résultat trouvé.")
-                st.write("Aucun resultat trouvé")
+def display_resumes(resumes, minio_service):
+    index = 0
+    found = False
+    for resume in resumes:
+        st.subheader(f"📄 Candidate {resume.get('full_name','') or ''} #{resume['_id']}")
+        st.write(resume["summary"])
+        pdf = minio_service.download_file(resume["minio_file_name"])
+        pdf_data = pdf.read()
+        st.download_button(
+            label="📥 Download CV (PDF)",
+            data=pdf_data,
+            file_name=f"{resume['full_name']}_{resume['_id']}.pdf",
+            mime='application/pdf',
+            key=f"download_{index}"
+        )
+        index += 1
+        logger.info(resume)
+        found = True
+
+    if not found:
+        logger.warning("Aucun résultat trouvé.")
+
 
             
             
