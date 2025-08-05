@@ -86,6 +86,7 @@ def text_to_mongo_query(text, llm_client, skills_dict):
     Here is the Question {text}
 
     Do not return explanations — only return the json MongoDB query.
+    IF ITS A GENERAL or UNRELATED QUESTION RETURN AN EMPTY JSON
     """
 
     result_json_query = llm_client.generate(prompt)
@@ -94,6 +95,8 @@ def text_to_mongo_query(text, llm_client, skills_dict):
 
 def query_to_resume(query,collection):
     dict_query = yaml.safe_load(query)
+    if not dict_query:
+        return []
     return collection.find(dict_query)
 
 
