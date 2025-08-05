@@ -121,7 +121,7 @@ def ChatPage():
     
     # Sidebar configuration
     with st.sidebar:
-        st.image("./static/DXC_Logo.png", width=150)
+        
         st.title("⚙️ Configuration")
         
         # LLM selection
