@@ -26,6 +26,9 @@ AI Talent Scout is a comprehensive Streamlit-based web application designed to s
 - **Vector Search**: ChromaDB + Google Generative AI Embeddings
 - **LLMs**: Groq API (LLaMA 3.3), Ollama (local)
 
+![Frontend App Structure](./static/Global_architecture.png)  
+*AI Talent Scout Global Architecture*
+For the ELK stack check the "main-with-elk" branch
 
 
 ## Project Structure
@@ -196,6 +199,7 @@ The Skills Management page provides comprehensive control over the skills dictio
 ## Conclusion
 
 AI Talent Scout represents a modern approach to resume management and candidate discovery, combining the power of Large Language Models with intelligent database management and vector search capabilities. The system provides a comprehensive solution for organizations looking to streamline their recruitment processes while maintaining data quality and consistency.
+
 
 
 
