@@ -3,6 +3,7 @@ from pages.chatPage import ChatPage
 from pages.upload_resumePage import UploadPage
 from pages.listResume import listResume
 from pages.csvPage import CsvPage
+from pages.skillsManagementPage import SkillsManagementPage
 
 st.set_page_config(page_title="AI Talent Scout", layout="wide")
 st.logo("./static/DXC_Logo.png",size="large")
@@ -15,6 +16,7 @@ pg = st.navigation([
     st.Page(UploadPage, title="Upload Page"),
     st.Page(listResume),
     st.Page(CsvPage, title="csv table"),
+    st.Page(SkillsManagementPage, title="Skills Management"),
 ])
 
 pg.run()
