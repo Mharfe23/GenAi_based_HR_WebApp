@@ -5,6 +5,7 @@ from pages.listResume import listResume
 from pages.csvPage import CsvPage
 import logging_config
 import logging
+from pages.skillsManagementPage import SkillsManagementPage
 
 logging_config.setup_logging()
 logger = logging.getLogger(__name__)
@@ -20,6 +21,7 @@ pg = st.navigation([
     st.Page(UploadPage, title="Upload Page"),
     st.Page(listResume),
     st.Page(CsvPage, title="csv table"),
+    st.Page(SkillsManagementPage, title="Skills Management"),
 ])
 
 pg.run()

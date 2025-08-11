@@ -55,6 +55,18 @@ def remove_skills_chroma(ids):
     vectorstore.delete(ids)
     logger.info(f"deleted the following skills: {ids}")
 
+def get_all_skills_chroma():
+    """Get all skills from ChromaDB"""
+    try:
+        # Get all documents from the collection
+        result = vectorstore.get()
+        if result and "ids" in result:
+            return result["ids"]
+        return []
+    except Exception as e:
+        logger.error(f"Error getting all skills from ChromaDB: {e}")
+        return []
+
 
 
 def main():
