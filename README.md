@@ -28,7 +28,7 @@ AI Talent Scout is a comprehensive Streamlit-based web application designed to s
 
 ![Frontend App Structure](./static/Global_architecture.png)  
 *AI Talent Scout Global Architecture*
-For the ELK stack check the "main-with-elk" branch
+**For the ELK stack check the "main-with-elk" branch**
 
 
 ## Project Structure
