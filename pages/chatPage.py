@@ -127,9 +127,6 @@ def display_resumes(resumes: List[Dict[str, Any]], minio_service: MinioClientSer
     for i, resume in enumerate(resumes):
         with st.container():
             # Enhanced resume card styling
-            st.markdown("""
-            <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 15px; margin: 1rem 0; border-left: 5px solid #667eea;">
-            """, unsafe_allow_html=True)
             
             col1, col2 = st.columns([3, 1])
             
