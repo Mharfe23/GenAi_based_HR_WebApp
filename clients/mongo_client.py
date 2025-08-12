@@ -51,6 +51,26 @@ def check_mongo_duplicate(email="", full_name=""):
     result = collection_candidat.find_one(query)
     return result is not None
 
+def get_skills_statistics():
+    pipeline = [
+    {
+        "$set": {
+            "skills": {
+                "$setUnion": ["$skills.technology", []]
+            }
+        }
+    },
+    {"$unwind": "$skills"},
+    {"$group": {
+        "_id": "$skills",
+        "nombre_cv": {"$sum": 1},
+    }},
+    {"$sort": {"nombre_cv": -1}}
+]
+
+    results = list(collection_candidat.aggregate(pipeline))
+    return results
+
 ################# Dictionnary (Set in this case) for skills 
 
 ##For Singleton DB connection
@@ -130,6 +150,8 @@ def main():
     for doc in get_skills_mongo():
         print(doc)
 
-#if __name__ == "__main__":
+if __name__ == "__main__":
+    #To run the file as a module > python -m clients.mongo_client
     #main()
     #print(check_mongo_duplicate(full_name="Kanoja Kumar Mishr"))
+    print(get_skills_statistics())
