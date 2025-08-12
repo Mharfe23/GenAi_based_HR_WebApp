@@ -277,10 +277,11 @@ def display_enhanced_sidebar(user_messages_count: int):
         # LLM selection with better styling
         st.markdown("#### 🤖 AI Model Selection")
         llm_choice = st.radio(
-            "",
+            "llm_choice",
             ("Groq API llama3.3_70B", "llama3.2 3B(local)"),
             help="Select the language model for query processing",
-            key="llm_choice"
+            key="llm_choice",
+            
         )
         
         st.divider()
