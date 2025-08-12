@@ -2,22 +2,22 @@ import streamlit as st
 import pandas as pd
 from typing import List, Dict, Any
 import logging
+import pandas as pd
+import plotly.express as px
 from clients.mongo_client import (
     get_skills_mongo, 
     add_new_skills_mongo, 
-    remove_skills_mongo, 
     replace_all_technologies,
-    init_techs_if_not_exist_mongo
+    get_skills_statistics,
 )
 from embeddings.chroma_gemini_embedding import (
     add_unique_skills_to_chroma, 
     remove_skills_chroma,
-    get_all_skills_chroma
+    get_all_skills_chroma,
 )
 from services.dictionaire_service import (
     delete_skills_from_mongo_chroma,
     init_primary_skills_in_dict,
-    primary_skills
 )
 
 # Configure logging
@@ -28,9 +28,11 @@ def get_skills_with_status() -> Dict[str, List[str]]:
     """Get skills from both databases and identify sync status"""
     try:
         mongo_skills = set(get_skills_mongo())
+        chroma_skills = set(get_all_skills_chroma())
+        skills = mongo_skills | chroma_skills
         return {
-            "mongo_skills": list(mongo_skills),
-            "total_count": len(mongo_skills)
+            "skills": list(skills),
+            "total_count": len(skills)
         }
     except Exception as e:
         logger.error(f"Error getting skills: {e}")
@@ -98,7 +100,6 @@ def display_skills_table(skills: List[str], title: str):
     
     df = pd.DataFrame({
         "Skill": skills,
-        "Database": ["MongoDB + ChromaDB"] * len(skills)
     })
     
     st.dataframe(df, use_container_width=True, hide_index=True)
@@ -110,6 +111,38 @@ def display_skills_table(skills: List[str], title: str):
         f"{title.lower().replace(' ', '_')}.csv",
         "text/csv"
     )
+def skills_statistics():
+    
+    #skills dashboard
+    skill_stats = get_skills_statistics()
+
+    data = []
+    for res in skill_stats:
+        data.append({
+            "Technology": res["_id"],
+            "Number of Resumes": res["nombre_cv"],
+        })
+
+    df = pd.DataFrame(data)
+
+    # 📈 Graphique
+    if not df.empty:
+        fig = px.bar(df, x="Technology", y="Number of Resumes", title="Number of Resumes per technology", height=400)
+        st.plotly_chart(fig, use_container_width=True)
+
+        csv = df.to_csv(index=False)
+        st.download_button(
+            "Download CSV",
+            csv,
+            "SkillPerResume.csv",
+            "text/csv",
+            key="sidebar_download"
+        )
+
+    
+    else:
+        st.warning("Aucune technologie trouvée.")
+
 
 def SkillsManagementPage():
     """Main skills management page function"""
@@ -175,21 +208,20 @@ def SkillsManagementPage():
         }
     </style>
     """, unsafe_allow_html=True)
-    
     # Header
     st.markdown('<h1 class="skills-header">🛠️ Skills Management</h1>', unsafe_allow_html=True)
     st.markdown('<p class="subtitle">Manage skills across MongoDB and ChromaDB databases</p>', unsafe_allow_html=True)
+    skills_statistics()
     
     # Get current skills
     skills_data = get_skills_with_status()
-    current_skills = skills_data["mongo_skills"]
+    current_skills = skills_data["skills"]
     total_skills = skills_data["total_count"]
     
     # Sidebar
     with st.sidebar:
         st.markdown("### 📊 Database Status")
         st.metric("Total Skills", total_skills)
-        st.metric("Databases", "MongoDB + ChromaDB")
         
         st.divider()
         

@@ -338,7 +338,6 @@ def UploadPage():
         # Processing options
         st.markdown("### 🔧 Processing Options")
         show_preview = st.checkbox("Show data preview", value=True, help="Display extracted data preview")
-        auto_process = st.checkbox("Auto-process uploads", value=True, help="Automatically process when files are uploaded")
         
         st.divider()
         
@@ -374,7 +373,7 @@ def UploadPage():
         )
         
         # Process files
-        if uploaded_files and auto_process:
+        if uploaded_files:
             process_uploaded_files(uploaded_files, llm_client, collection, minio_client, existing_skills, show_preview)
     
     with col2:
