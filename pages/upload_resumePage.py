@@ -3,7 +3,7 @@ import json
 import os
 import tempfile
 from typing import List, Dict, Any, Optional
-import time
+from datetime import datetime
 
 from utils import extract_resume_text
 from clients.mongo_client import mongo_candidat_init, check_mongo_duplicate
@@ -241,7 +241,7 @@ def process_single_file(uploaded_file, llm_client, collection, minio_client, exi
         with st.spinner("💾 Saving to database..."):
             minio_filename = minio_client.upload_file(uploaded_file)
             extracted_data["minio_file_name"] = minio_filename
-            extracted_data["upload_timestamp"] = time.time()
+            extracted_data["upload_timestamp"] = datetime.now() 
             
             collection.insert_one(extracted_data)
         
