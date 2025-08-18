@@ -177,7 +177,7 @@ def display_extraction_preview(extracted_data: Dict[str, Any]) -> None:
                     skills_html += f'<span class="feature-badge">{skill}</span> '
                 st.markdown(skills_html, unsafe_allow_html=True)
 
-def process_single_file(uploaded_file, llm_client, collection, minio_client, existing_skills) -> Dict[str, Any]:
+def process_single_file(uploaded_file, llm_client, collection, minio_client, existing_skills, job_offer="", job_offer_date=None) -> Dict[str, Any]:
     """Process a single uploaded resume file"""
     result = {
         "success": False,
@@ -242,6 +242,12 @@ def process_single_file(uploaded_file, llm_client, collection, minio_client, exi
             minio_filename = minio_client.upload_file(uploaded_file)
             extracted_data["minio_file_name"] = minio_filename
             extracted_data["upload_timestamp"] = datetime.now() 
+            
+            # Add job offer information
+            if job_offer:
+                extracted_data["job_offer"] = job_offer
+            if job_offer_date:
+                extracted_data["job_offer_date"] = job_offer_date.isoformat()
             
             collection.insert_one(extracted_data)
         
@@ -339,6 +345,27 @@ def UploadPage():
         st.markdown("### 🔧 Processing Options")
         show_preview = st.checkbox("Show data preview", value=True, help="Display extracted data preview")
         
+        # Job offer selection
+        st.markdown("### 💼 Job Offer Assignment")
+        job_offer = st.text_input(
+            "Job Offer Title:",
+            placeholder="e.g., Senior Python Developer, Data Scientist, Frontend Engineer",
+            help="Enter the job offer title for the resumes being uploaded"
+        )
+        
+        # Automatically set current date for job offer
+        from datetime import date
+        job_offer_date = st.date_input(
+            "Job Offer Date:",
+            value=date.today(),
+            help="Select the date when this job offer was posted (defaults to today)"
+        )
+        
+        # Add "All Job Offers" option
+        if st.button("📋 View All Job Offers", use_container_width=True):
+            st.session_state.show_job_offers = True
+            st.rerun()
+        
         st.divider()
         
         # Statistics
@@ -374,7 +401,7 @@ def UploadPage():
         
         # Process files
         if uploaded_files:
-            process_uploaded_files(uploaded_files, llm_client, collection, minio_client, existing_skills, show_preview)
+            process_uploaded_files(uploaded_files, llm_client, collection, minio_client, existing_skills, show_preview, job_offer, job_offer_date)
     
     with col2:
         # Display processing results summary
@@ -404,8 +431,54 @@ def UploadPage():
                             {result['message']}
                         </div>
                         """, unsafe_allow_html=True)
+    
+    # Job Offers Overview Section
+    if st.session_state.get('show_job_offers', False):
+        st.markdown("---")
+        st.markdown("### 📋 All Job Offers Overview")
+        
+        try:
+            # Get all unique job offers from the database
+            pipeline = [
+                {"$match": {"job_offer": {"$exists": True, "$ne": ""}}},
+                {"$group": {
+                    "_id": "$job_offer",
+                    "count": {"$sum": 1},
+                    "latest_date": {"$max": "$job_offer_date"},
+                    "candidates": {"$push": "$full_name"}
+                }},
+                {"$sort": {"latest_date": -1}}
+            ]
+            
+            job_offers = list(collection.aggregate(pipeline))
+            
+            if job_offers:
+                for offer in job_offers:
+                    with st.expander(f"💼 {offer['_id']} ({offer['count']} candidates)", expanded=False):
+                        st.write(f"**Latest Application Date:** {offer['latest_date']}")
+                        st.write(f"**Total Candidates:** {offer['count']}")
+                        st.write("**Candidates:**")
+                        for candidate in offer['candidates'][:10]:  # Show first 10
+                            st.write(f"• {candidate}")
+                        if len(offer['candidates']) > 10:
+                            st.write(f"... and {len(offer['candidates']) - 10} more")
+                        
+                        # Add option to view all candidates for this job offer
+                        if st.button(f"View All Candidates for {offer['_id']}", key=f"view_{offer['_id']}"):
+                            st.session_state.selected_job_offer = offer['_id']
+                            st.rerun()
+            else:
+                st.info("No job offers found in the database.")
+                
+        except Exception as e:
+            st.error(f"Error retrieving job offers: {e}")
+        
+        # Button to hide job offers view
+        if st.button("🔒 Hide Job Offers View"):
+            st.session_state.show_job_offers = False
+            st.rerun()
 
-def process_uploaded_files(uploaded_files: List, llm_client, collection, minio_client, existing_skills, show_preview: bool):
+def process_uploaded_files(uploaded_files: List, llm_client, collection, minio_client, existing_skills, show_preview: bool, job_offer="", job_offer_date=None):
     """Process multiple uploaded files"""
     new_files = [f for f in uploaded_files if f.name not in st.session_state.processed_files]
     
@@ -430,7 +503,7 @@ def process_uploaded_files(uploaded_files: List, llm_client, collection, minio_c
         """, unsafe_allow_html=True)
         
         # Process the file
-        result = process_single_file(uploaded_file, llm_client, collection, minio_client, existing_skills)
+        result = process_single_file(uploaded_file, llm_client, collection, minio_client, existing_skills, job_offer, job_offer_date)
         
         # Store result
         st.session_state.processing_results.append(result)
