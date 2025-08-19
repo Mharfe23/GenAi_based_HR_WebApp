@@ -177,7 +177,7 @@ def display_extraction_preview(extracted_data: Dict[str, Any]) -> None:
                     skills_html += f'<span class="feature-badge">{skill}</span> '
                 st.markdown(skills_html, unsafe_allow_html=True)
 
-def process_single_file(uploaded_file, llm_client, collection, minio_client, existing_skills, job_offer="", job_offer_date=None) -> Dict[str, Any]:
+def process_single_file(uploaded_file, llm_client, collection, minio_client, existing_skills, job_offer="", job_offer_date=None, skill_strategy: str = "chroma") -> Dict[str, Any]:
     """Process a single uploaded resume file"""
     result = {
         "success": False,
@@ -234,7 +234,12 @@ def process_single_file(uploaded_file, llm_client, collection, minio_client, exi
         # Process skills
         with st.spinner("🔍 Processing skills and matching..."):
             logger.debug(f"Extracted data BEFORE similarity replace: {extracted_data}")
-            add_skill_if_new_and_replace_similar_ones(extracted_data, existing_skills_set=existing_skills)
+            add_skill_if_new_and_replace_similar_ones(
+                extracted_data,
+                existing_skills_set=existing_skills,
+                strategy_name=skill_strategy,
+                llm_client=llm_client
+            )
             logger.debug(f"Extracted data AFTER similarity replace: {extracted_data}")
         
         # Upload to MinIO and save to MongoDB
@@ -340,6 +345,15 @@ def UploadPage():
         st.session_state.llm_client = llm_client
         
         st.divider()
+
+        # Skill matching strategy selection
+        st.markdown("### 🧠 Skill Matching Strategy")
+        skill_strategy = st.radio(
+            "Select skill mapping approach:",
+            ("Chroma similarity (default)", "LLM normalization"),
+            help="Choose between vector similarity using Chroma or LLM-based strict normalization"
+        )
+        skill_strategy_value = "chroma" if skill_strategy == "Chroma similarity (default)" else "llm"
         
         # Processing options
         st.markdown("### 🔧 Processing Options")
@@ -387,7 +401,6 @@ def UploadPage():
                     latest_date = doc["latest_date"]
                     if latest_date:
                         try:
-                            from datetime import datetime
                             date_obj = datetime.fromisoformat(latest_date).strftime("%Y-%m-%d")
                             formatted_options.append(f"{doc['_id']} ({count} candidates, latest: {date_obj})")
                         except (ValueError, TypeError):
@@ -480,7 +493,7 @@ def UploadPage():
         
         # Process files
         if uploaded_files:
-            process_uploaded_files(uploaded_files, llm_client, collection, minio_client, existing_skills, show_preview, job_offer, job_offer_date)
+            process_uploaded_files(uploaded_files, llm_client, collection, minio_client, existing_skills, show_preview, job_offer, job_offer_date, skill_strategy_value)
     
     with col2:
         # Display processing results summary
@@ -557,7 +570,7 @@ def UploadPage():
             st.session_state.show_job_offers = False
             st.rerun()
 
-def process_uploaded_files(uploaded_files: List, llm_client, collection, minio_client, existing_skills, show_preview: bool, job_offer="", job_offer_date=None):
+def process_uploaded_files(uploaded_files: List, llm_client, collection, minio_client, existing_skills, show_preview: bool, job_offer="", job_offer_date=None, skill_strategy: str = "chroma"):
     """Process multiple uploaded files"""
     new_files = [f for f in uploaded_files if f.name not in st.session_state.processed_files]
     
@@ -582,7 +595,7 @@ def process_uploaded_files(uploaded_files: List, llm_client, collection, minio_c
         """, unsafe_allow_html=True)
         
         # Process the file
-        result = process_single_file(uploaded_file, llm_client, collection, minio_client, existing_skills, job_offer, job_offer_date)
+        result = process_single_file(uploaded_file, llm_client, collection, minio_client, existing_skills, job_offer, job_offer_date, skill_strategy)
         
         # Store result
         st.session_state.processing_results.append(result)
