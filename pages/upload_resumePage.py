@@ -347,11 +347,78 @@ def UploadPage():
         
         # Job offer selection
         st.markdown("### 💼 Job Offer Assignment")
-        job_offer = st.text_input(
-            "Job Offer Title:",
-            placeholder="e.g., Senior Python Developer, Data Scientist, Frontend Engineer",
-            help="Enter the job offer title for the resumes being uploaded"
-        )
+        
+        # Get existing job offers from database with candidate counts
+        try:
+            pipeline = [
+                {"$match": {"job_offer": {"$exists": True, "$ne": ""}}},
+                {"$group": {
+                    "_id": "$job_offer",
+                    "count": {"$sum": 1},
+                    "latest_date": {"$max": "$job_offer_date"}
+                }},
+                {"$sort": {"latest_date": -1}}
+            ]
+            existing_job_offers_data = list(collection.aggregate(pipeline))
+            existing_job_offers = [doc["_id"] for doc in existing_job_offers_data]
+        except Exception as e:
+            existing_job_offers = []
+            existing_job_offers_data = []
+            logger.warning(f"Could not retrieve existing job offers: {e}")
+        
+        # Job offer selection with existing options
+        if existing_job_offers:
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                job_offer_choice = st.radio(
+                    "Choose Job Offer:",
+                    ["Select from existing", "Create new job offer"],
+                    help="Select from existing job offers or create a new one"
+                )
+            with col2:
+                if st.button("🔄", help="Refresh the list of existing job offers"):
+                    st.rerun()
+            
+            if job_offer_choice == "Select from existing":
+                # Create formatted options with candidate counts
+                formatted_options = []
+                for doc in existing_job_offers_data:
+                    count = doc["count"]
+                    latest_date = doc["latest_date"]
+                    if latest_date:
+                        try:
+                            from datetime import datetime
+                            date_obj = datetime.fromisoformat(latest_date).strftime("%Y-%m-%d")
+                            formatted_options.append(f"{doc['_id']} ({count} candidates, latest: {date_obj})")
+                        except (ValueError, TypeError):
+                            formatted_options.append(f"{doc['_id']} ({count} candidates)")
+                    else:
+                        formatted_options.append(f"{doc['_id']} ({count} candidates)")
+                
+                selected_option = st.selectbox(
+                    "Existing Job Offers:",
+                    formatted_options,
+                    help="Select an existing job offer from the database"
+                )
+                
+                # Extract the actual job offer title from the selected option
+                if selected_option:
+                    job_offer = selected_option.split(" (")[0]
+                else:
+                    job_offer = ""
+            else:
+                job_offer = st.text_input(
+                    "New Job Offer Title:",
+                    placeholder="e.g., Senior Python Developer, Data Scientist, Frontend Engineer",
+                    help="Enter a new job offer title for the resumes being uploaded"
+                )
+        else:
+            # No existing job offers, just show text input
+            job_offer = st.text_input(
+                "Job Offer Title:",
+                placeholder="e.g., Senior Python Developer, Data Scientist, Frontend Engineer",
+                help="Enter the job offer title for the resumes being uploaded"
+            )
         
         # Automatically set current date for job offer
         from datetime import date
@@ -360,6 +427,18 @@ def UploadPage():
             value=date.today(),
             help="Select the date when this job offer was posted (defaults to today)"
         )
+        
+        # Show information about selected job offer
+        if job_offer and existing_job_offers_data:
+            selected_job_data = next((doc for doc in existing_job_offers_data if doc["_id"] == job_offer), None)
+            if selected_job_data:
+                st.info(f"📊 **Job Offer Info:** {selected_job_data['count']} candidates already exist for this position")
+                if selected_job_data.get('latest_date'):
+                    try:
+                        latest_date_obj = datetime.fromisoformat(selected_job_data['latest_date']).date()
+                        st.info(f"📅 **Latest Application:** {latest_date_obj.strftime('%B %d, %Y')}")
+                    except (ValueError, TypeError):
+                        pass
         
         # Add "All Job Offers" option
         if st.button("📋 View All Job Offers", use_container_width=True):
