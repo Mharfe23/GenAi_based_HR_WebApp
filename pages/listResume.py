@@ -1,6 +1,6 @@
 import streamlit as st
 import base64
-from clients.mongo_client import mongo_candidat_init
+from clients.mongo_client import mongo_candidat_init, get_skills_mongo
 from clients.minio_client import MinioClientService
 # Example list of PDFs with metadata
 from streamlit_pdf_viewer import pdf_viewer
@@ -19,7 +19,30 @@ def listResume():
     col1, col2 = st.columns([2, 1])
     
     with col1:
-        search_query = st.text_input("🔍 Search by name, email, role or summary").lower()
+        st.markdown("**🛠 Advanced Filters**")
+        name_filter = st.text_input("Filter by Name (contains):", key="list_name_filter").strip().lower()
+        role_filter = st.text_input("Filter by Role (contains):", key="list_role_filter").strip().lower()
+        # Skills filter: load from Mongo skills dictionary
+        try:
+            skills_dict = get_skills_mongo()
+        except Exception:
+            st.error("Error loading skills dictionary")
+            skills_dict = []
+        selected_skills = st.multiselect(
+            "Filter by Skills:",
+            options=sorted(skills_dict),
+            help="Choose one or more skills from the reference dictionary",
+            key="list_skills_filter"
+        )
+        skill_match_mode = st.radio(
+            "Match Mode:",
+            options=["Any", "All"],
+            horizontal=True,
+            help="Any: candidate has at least one selected skill. All: candidate has all selected skills.",
+            key="list_skills_match_mode"
+        )
+        email_filter = st.text_input("Filter by Email (contains):", key="list_email_filter").strip().lower()
+        summary_filter = st.text_input("Filter by Summary Keyword:", key="list_summary_filter").strip().lower()
     
     with col2:
         # Job offer filter
@@ -48,22 +71,55 @@ def listResume():
             end_date = None
 
     resumes = st.session_state.resumes
-    filtered_resumes = [
-        c for c in resumes
-        if (not search_query or 
-            search_query in (c.get("full_name") or "").lower()
-            or (
-            isinstance(c.get("email"), list)
-            and any(search_query in (email or "").lower() for email in c["email"])
-            )
-            or (
-                isinstance(c.get("email"), str)
-                and search_query in (email or "").lower()
-            )
-            or search_query in (c.get("current_role_experience", {}).get("role", "") or "").lower()
-            or search_query in (c.get("summary") or "").lower())
-        and (selected_job_offer == "All Job Offers" or c.get("job_offer") == selected_job_offer)
-    ]
+    filtered_resumes = []
+    for c in resumes:
+        # Name filter
+        name_match = True
+        if name_filter:
+            name_match = name_filter in (c.get("full_name") or "").lower()
+
+        # Email filter (contains)
+        email_match = True
+        if email_filter:
+            if isinstance(c.get("email"), list):
+                email_match = any(email_filter in (e or "").lower() for e in c["email"])
+            else:
+                email_match = email_filter in (c.get("email") or "").lower()
+
+        # Role filter
+        role_match = True
+        if role_filter:
+            role_match = role_filter in (c.get("current_role_experience", {}).get("role", "") or "").lower()
+
+        # Summary keyword filter
+        summary_match = True
+        if summary_filter:
+            summary_match = summary_filter in (c.get("summary") or "").lower()
+
+        # Job offer filter
+        job_offer_match = (selected_job_offer == "All Job Offers" or c.get("job_offer") == selected_job_offer)
+
+        # Skills filter
+        skills_match = True
+        if selected_skills:
+            # Extract techs from candidate
+            candidate_techs = []
+            try:
+                for s in c.get("skills", []):
+                    tech = (s.get("technology") or "").strip().lower()
+                    if tech:
+                        candidate_techs.append(tech)
+            except Exception:
+                candidate_techs = []
+
+            selected_skills_norm = [s.strip().lower() for s in selected_skills]
+            if skill_match_mode == "All":
+                skills_match = all(s in candidate_techs for s in selected_skills_norm)
+            else:
+                skills_match = any(s in candidate_techs for s in selected_skills_norm)
+
+        if name_match and email_match and role_match and summary_match and job_offer_match and skills_match:
+            filtered_resumes.append(c)
     
     # Apply date filtering if job offer is selected and dates are specified
     if selected_job_offer != "All Job Offers" and start_date and end_date:
@@ -80,13 +136,39 @@ def listResume():
                     continue
         filtered_resumes = date_filtered_resumes
 
+    # Notify when filters are applied
+    active_filters = []
+    if name_filter:
+        active_filters.append(f"Name contains '{name_filter}'")
+    if email_filter:
+        active_filters.append(f"Email contains '{email_filter}'")
+    if role_filter:
+        active_filters.append(f"Role contains '{role_filter}'")
+    if summary_filter:
+        active_filters.append(f"Summary contains '{summary_filter}'")
+    if selected_skills:
+        mode_txt = "all" if skill_match_mode == "All" else "any"
+        active_filters.append(f"Skills ({mode_txt}): {', '.join(selected_skills)}")
+    if selected_job_offer != "All Job Offers":
+        active_filters.append(f"Job Offer: {selected_job_offer}")
+        if start_date and end_date:
+            active_filters.append(f"Date: {start_date} → {end_date}")
+
+    if active_filters:
+        msg = " | ".join(active_filters) + f"  •  {len(filtered_resumes)} result(s)"
+        toast_fn = getattr(st, "toast", None)
+        if callable(toast_fn):
+            toast_fn(msg)
+        else:
+            st.info(msg)
+
     for index, pdf_info in enumerate(filtered_resumes):
         # Load PDF
         # Metadata display
-        max_experience = max(pdf_info['roles_experience'],key=lambda x:x['years_experience'])
-        st.subheader(f"📄 {max_experience["role"]} : {max_experience["years_experience"]}  years of experience")
+        max_experience = max(pdf_info['roles_experience'], key=lambda x: x.get('years_experience', 0)) if pdf_info.get('roles_experience') else {"role": "", "years_experience": 0}
+        st.subheader(f"📄 {max_experience['role']} : {max_experience['years_experience']} years of experience")
         st.write(f"**Author:** {pdf_info.get('full_name')}")
-        st.write(f"**Overview:** {pdf_info['summary']}")
+        st.write(f"**Overview:** {pdf_info.get('summary', '')}")
         
         # Job offer information
         if pdf_info.get('job_offer'):
@@ -107,7 +189,7 @@ def listResume():
         st.download_button(
             label="📥 Download PDF",
             data=pdf_data,
-            file_name=f"{pdf_info["full_name"]}_{pdf_info['_id']}.pdf",
+            file_name=f"{pdf_info['full_name']}_{pdf_info['_id']}.pdf",
             mime='application/pdf',
             key=f"download_button_{index}"  # Ensure unique keys
         )
