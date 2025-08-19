@@ -147,6 +147,12 @@ def display_resumes(resumes: List[Dict[str, Any]], minio_service: MinioClientSer
                 # Location if available
                 if resume.get('location'):
                     st.markdown(f"**📍 Location:** {resume['location']}")
+                
+                # Job offer information
+                if resume.get('job_offer'):
+                    st.markdown(f"**💼 Job Offer:** {resume['job_offer']}")
+                if resume.get('job_offer_date'):
+                    st.markdown(f"**📅 Job Offer Date:** {resume['job_offer_date']}")
             
             with col2:
                 # Enhanced download button
@@ -283,6 +289,61 @@ def display_enhanced_sidebar(user_messages_count: int):
             key="llm_choice",
             
         )
+        
+        st.divider()
+        
+        # Job offer filter
+        st.markdown("#### 💼 Job Offer Filter")
+        try:
+            # Get all unique job offers from the database
+            from clients.mongo_client import mongo_candidat_init
+            collection = mongo_candidat_init()
+            pipeline = [
+                {"$match": {"job_offer": {"$exists": True, "$ne": ""}}},
+                {"$group": {"_id": "$job_offer"}},
+                {"$sort": {"_id": 1}}
+            ]
+            job_offers = ["All Job Offers"] + [doc["_id"] for doc in collection.aggregate(pipeline)]
+            
+            selected_job_offer = st.selectbox(
+                "Filter by Job Offer:",
+                job_offers,
+                key="chat_job_offer_filter"
+            )
+            
+            # Store selected job offer in session state
+            st.session_state.selected_job_offer = selected_job_offer
+            
+            # Date range filter for job offers
+            if selected_job_offer != "All Job Offers":
+                st.markdown("**📅 Filter by Date Range:**")
+                col_date1, col_date2 = st.columns(2)
+                with col_date1:
+                    from datetime import date, timedelta
+                    start_date = st.date_input(
+                        "From Date:",
+                        value=date.today() - timedelta(days=30),
+                        help="Show resumes from this date onwards",
+                        key="chat_start_date"
+                    )
+                with col_date2:
+                    end_date = st.date_input(
+                        "To Date:",
+                        value=date.today(),
+                        help="Show resumes up to this date",
+                        key="chat_end_date"
+                    )
+                
+                # Store dates in session state
+                st.session_state.chat_start_date = start_date
+                st.session_state.chat_end_date = end_date
+            else:
+                st.session_state.chat_start_date = None
+                st.session_state.chat_end_date = None
+            
+        except Exception as e:
+            st.error(f"Error loading job offers: {e}")
+            selected_job_offer = "All Job Offers"
         
         st.divider()
         
@@ -428,6 +489,33 @@ def process_question(question: str, llm_client, mongo_collection, minio_service,
                 # Execute query and get resumes
                 resumes = query_to_resume(query, mongo_collection)
                 resumes_list = list(resumes)
+                
+                # Apply job offer filter if selected
+                if st.session_state.get('selected_job_offer') and st.session_state.get('selected_job_offer') != "All Job Offers":
+                    resumes_list = [r for r in resumes_list if r.get('job_offer') == st.session_state.get('selected_job_offer')]
+                    
+                    # Apply date filtering if dates are specified
+                    if st.session_state.get('chat_start_date') and st.session_state.get('chat_end_date'):
+                        from datetime import datetime
+                        date_filtered_resumes = []
+                        for r in resumes_list:
+                            if r.get('job_offer_date'):
+                                try:
+                                    job_date = datetime.fromisoformat(r["job_offer_date"]).date()
+                                    if (st.session_state.get('chat_start_date') <= job_date <= 
+                                        st.session_state.get('chat_end_date')):
+                                        date_filtered_resumes.append(r)
+                                except (ValueError, TypeError):
+                                    continue
+                        resumes_list = date_filtered_resumes
+                        st.info(f"🔍 Filtered by job offer: {st.session_state.get('selected_job_offer')} and date range ({len(resumes_list)} candidates)")
+                    else:
+                        st.info(f"🔍 Filtered by job offer: {st.session_state.get('selected_job_offer')} ({len(resumes_list)} candidates)")
+                    
+                    if not resumes_list:
+                        st.warning(f"⚠️ No candidates found for job offer: {st.session_state.get('selected_job_offer')}")
+                
+            
                 
                 # Display results
                 display_resumes(resumes_list, minio_service)

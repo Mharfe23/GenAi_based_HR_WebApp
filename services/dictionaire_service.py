@@ -1,5 +1,6 @@
 from clients.mongo_client import get_skills_mongo, add_new_skills_mongo, init_techs_if_not_exist_mongo,remove_skills_mongo
-from embeddings.chroma_gemini_embedding import add_unique_skills_to_chroma, find_similar_skill,remove_skills_chroma
+from embeddings.chroma_gemini_embedding import add_unique_skills_to_chroma, remove_skills_chroma
+from services.skill_matching import get_skill_match_strategy
 import logging
 
 logging.basicConfig(
@@ -74,7 +75,7 @@ def init_primary_skills_in_dict():
     add_unique_skills_to_chroma(primary_skills)
     init_techs_if_not_exist_mongo(primary_skills)
 
-def add_skill_if_new_and_replace_similar_ones(new_skills_dict,existing_skills_set):
+def add_skill_if_new_and_replace_similar_ones(new_skills_dict,existing_skills_set, strategy_name: str = "chroma", llm_client=None):
     """ 
     if the skill doesn't exist in existing skills , search for similar option if it exists replace it with existing one 
     if not add it to existing ones
@@ -87,6 +88,20 @@ def add_skill_if_new_and_replace_similar_ones(new_skills_dict,existing_skills_se
 
     ##list of technologies
     new_skills = new_skills_dict["skills"]
+    strategy = get_skill_match_strategy(strategy_name)
+
+    # Normalize reference set to lower-case
+    if not isinstance(existing_skills_set, set):
+        existing_skills_set = set(existing_skills_set)
+    existing_skills_set = {s.strip().lower() for s in existing_skills_set}
+
+    # Build a mapping using the chosen strategy (works on all skills at once for LLM batching)
+    input_skills_list = [s.get("technology", "").strip() for s in new_skills if s.get("technology")]
+    mapping = strategy.map_skills_to_reference(
+        skills_cv=input_skills_list,
+        technologies_reference=existing_skills_set,
+        llm_client=llm_client,
+    )
     skills_to_add = []
     for index,new_skill in enumerate(new_skills):
         lower_skill_val = new_skill["technology"].strip().lower()
@@ -95,11 +110,11 @@ def add_skill_if_new_and_replace_similar_ones(new_skills_dict,existing_skills_se
             new_skills[index]["technology"] = lower_skill_val
             continue
 
-        similar = find_similar_skill(lower_skill_val)
-
+        # Use strategy result if available
+        similar = mapping.get(lower_skill_val)
         if similar:
             new_skills[index]["technology"] = similar
-            logger.info(f"{lower_skill_val} found similar : {similar}")
+            logger.info(f"{lower_skill_val} mapped to : {similar} via strategy '{strategy_name}'")
         else:
             skills_to_add.append(lower_skill_val)
 
