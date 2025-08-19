@@ -7,7 +7,7 @@ from clients.minio_client import MinioClientService
 import logging
 from typing import List, Dict, Any
 import json
-
+from datetime import date, timedelta
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -319,7 +319,7 @@ def display_enhanced_sidebar(user_messages_count: int):
                 st.markdown("**📅 Filter by Date Range:**")
                 col_date1, col_date2 = st.columns(2)
                 with col_date1:
-                    from datetime import date, timedelta
+                   
                     start_date = st.date_input(
                         "From Date:",
                         value=date.today() - timedelta(days=30),
@@ -334,12 +334,8 @@ def display_enhanced_sidebar(user_messages_count: int):
                         key="chat_end_date"
                     )
                 
-                # Store dates in session state
-                st.session_state.chat_start_date = start_date
-                st.session_state.chat_end_date = end_date
-            else:
-                st.session_state.chat_start_date = None
-                st.session_state.chat_end_date = None
+                # Dates are already managed in st.session_state by the widgets' keys
+                
             
         except Exception as e:
             st.error(f"Error loading job offers: {e}")
