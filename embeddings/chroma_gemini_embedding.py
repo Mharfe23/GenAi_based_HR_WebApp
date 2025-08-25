@@ -58,7 +58,7 @@ def find_similar_skill(skill: str):
 def remove_skills_chroma(ids):
     ids = [id.strip().lower() for id in ids]
     vectorstore.delete(ids)
-    logger.info(f"deleted the following skills: {ids}")
+    logger.info(f"deleted the following skills: {ids} in chroma")
 
 def get_all_skills_chroma():
     """Get all skills from ChromaDB"""
@@ -88,6 +88,9 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    #main()
     # result = vectorstore.get()
     # print("adeed documents "+str(result))
+    # remove_skills_chroma(["Ai agent"])
+    vectorstore.delete("Ai agent")
+    print("deleted")

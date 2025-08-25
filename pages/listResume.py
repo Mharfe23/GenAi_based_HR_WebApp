@@ -15,6 +15,49 @@ def listResume():
     
     st.title("📄 Candidate Table with PDF Preview")
     
+    # Dashboard: number of candidates per job offer
+    try:
+        offer_counts = {}
+        for c in st.session_state.resumes:
+            offer = c.get("job_offer")
+            if offer:
+                offer_counts[offer] = offer_counts.get(offer, 0) + 1
+
+        st.markdown("### 📊 Job Offer Dashboard")
+        cols = st.columns(3)
+        with cols[0]:
+            st.metric("Total Candidates", len(st.session_state.resumes))
+        with cols[1]:
+            st.metric("Job Offers", len(offer_counts))
+        with cols[2]:
+            st.metric("Top Offer Count", max(offer_counts.values()) if offer_counts else 0)
+
+        if offer_counts:
+            # Try to render a pie chart; fallback to bar/table if deps missing
+            try:
+                import pandas as pd  # type: ignore
+                df_counts = (
+                    pd.DataFrame(
+                        {"job_offer": list(offer_counts.keys()), "count": list(offer_counts.values())}
+                    )
+                    .sort_values("count", ascending=False)
+                )
+                try:
+                    import plotly.express as px  # type: ignore
+                    fig = px.pie(df_counts, names="job_offer", values="count", title="Candidates per Job Offer")
+                    st.plotly_chart(fig, use_container_width=True)
+                except Exception:
+                    # Fallback to bar chart if plotly is unavailable
+                    st.bar_chart(df_counts.set_index("job_offer"))
+                
+            except Exception:
+                # Fallback to a simple table
+                st.write({k: offer_counts[k] for k in sorted(offer_counts, key=offer_counts.get, reverse=True)})
+        else:
+            st.info("No job offers found among candidates.")
+    except Exception as e:
+        st.warning(f"Could not build dashboard: {e}")
+    
     # Search and filter section
     col1, col2 = st.columns([2, 1])
     
@@ -176,22 +219,22 @@ def listResume():
         if pdf_info.get('job_offer_date'):
             st.write(f"**📅 Job Offer Date:** {pdf_info['job_offer_date']}")
 
-        pdf = minio.download_file(pdf_info["minio_file_name"])
-        pdf_data = pdf.read()
-        
-        pdf_viewer(
-            pdf_data,
-            
-            height=350
-        )
-
-        # Download button
-        st.download_button(
-            label="📥 Download PDF",
-            data=pdf_data,
-            file_name=f"{pdf_info['full_name']}_{pdf_info['_id']}.pdf",
-            mime='application/pdf',
-            key=f"download_button_{index}"  # Ensure unique keys
-        )
+        # PDF preview and download (skip for mock rows without files)
+        if not pdf_info.get("is_mock") and pdf_info.get("minio_file_name"):
+            try:
+                pdf = minio.download_file(pdf_info["minio_file_name"])
+                pdf_data = pdf.read()
+                pdf_viewer(pdf_data, height=350)
+                st.download_button(
+                    label="📥 Download PDF",
+                    data=pdf_data,
+                    file_name=f"{pdf_info['full_name']}_{pdf_info['_id']}.pdf",
+                    mime='application/pdf',
+                    key=f"download_button_{index}"
+                )
+            except Exception:
+                st.caption("PDF preview unavailable.")
+        else:
+            st.caption("Preview mode: PDF not available for mock data.")
 
         st.markdown("---")

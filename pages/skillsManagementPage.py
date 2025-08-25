@@ -136,7 +136,7 @@ def skills_statistics():
             csv,
             "SkillPerResume.csv",
             "text/csv",
-            key="sidebar_download"
+            key="csv_download"
         )
 
     
