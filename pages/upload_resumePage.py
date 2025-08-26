@@ -177,7 +177,7 @@ def display_extraction_preview(extracted_data: Dict[str, Any]) -> None:
                     skills_html += f'<span class="feature-badge">{skill}</span> '
                 st.markdown(skills_html, unsafe_allow_html=True)
 
-def process_single_file(uploaded_file, llm_client, collection, minio_client, existing_skills, job_offer="", job_offer_date=None, skill_strategy: str = "chroma") -> Dict[str, Any]:
+def process_single_file(uploaded_file, llm_client, collection, minio_client, existing_skills, job_offer="", job_offer_date=None, skill_strategy: str = "llm") -> Dict[str, Any]:
     """Process a single uploaded resume file"""
     result = {
         "success": False,
@@ -226,10 +226,11 @@ def process_single_file(uploaded_file, llm_client, collection, minio_client, exi
             return result
         
         # Check for duplicates
-        if check_mongo_duplicate(email=extracted_data["email"], full_name=extracted_data["full_name"]):
-            result["message"] = f"⚠️ Duplicate found: {extracted_data['email']} or {extracted_data['full_name']} already exists"
-            result["data"] = extracted_data
-            return result
+        # keep the old one
+        # if check_mongo_duplicate(email=extracted_data["email"], full_name=extracted_data["full_name"]):
+        #     result["message"] = f"⚠️ Resume Already exists: {extracted_data['email']} or {extracted_data['full_name']} already exists. Replacing with the new one "
+        #     result["data"] = extracted_data
+        #     return result
         
         # Process skills
         with st.spinner("🔍 Processing skills and matching..."):
@@ -350,10 +351,10 @@ def UploadPage():
         st.markdown("### 🧠 Skill Matching Strategy")
         skill_strategy = st.radio(
             "Select skill mapping approach:",
-            ("Chroma similarity (default)", "LLM normalization"),
+            ("Chroma similarity", "LLM normalization (default)"),
             help="Choose between vector similarity using Chroma or LLM-based strict normalization"
         )
-        skill_strategy_value = "chroma" if skill_strategy == "Chroma similarity (default)" else "llm"
+        skill_strategy_value = "chroma" if skill_strategy == "Chroma similarity" else "llm"
         
         # Processing options
         st.markdown("### 🔧 Processing Options")
@@ -570,7 +571,7 @@ def UploadPage():
             st.session_state.show_job_offers = False
             st.rerun()
 
-def process_uploaded_files(uploaded_files: List, llm_client, collection, minio_client, existing_skills, show_preview: bool, job_offer="", job_offer_date=None, skill_strategy: str = "chroma"):
+def process_uploaded_files(uploaded_files: List, llm_client, collection, minio_client, existing_skills, show_preview: bool, job_offer="", job_offer_date=None, skill_strategy: str = "llm"):
     """Process multiple uploaded files"""
     new_files = [f for f in uploaded_files if f.name not in st.session_state.processed_files]
     

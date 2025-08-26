@@ -7,7 +7,7 @@ from clients.minio_client import MinioClientService
 import logging
 from typing import List, Dict, Any
 import json
-from datetime import date, timedelta
+from datetime import date, timedelta , datetime
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -120,6 +120,7 @@ def display_resumes(resumes: List[Dict[str, Any]], minio_service: MinioClientSer
     if not resumes:
         st.warning("🔍 No resumes found matching your criteria.")
         return
+                        
     
     st.success(f"✅ Found {len(resumes)} matching candidate(s)")
     
@@ -492,7 +493,6 @@ def process_question(question: str, llm_client, mongo_collection, minio_service,
                     
                     # Apply date filtering if dates are specified
                     if st.session_state.get('chat_start_date') and st.session_state.get('chat_end_date'):
-                        from datetime import datetime
                         date_filtered_resumes = []
                         for r in resumes_list:
                             if r.get('job_offer_date'):
