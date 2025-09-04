@@ -195,10 +195,12 @@ The Skills Management page provides comprehensive control over the skills dictio
 - **Database Synchronization**: Ensure MongoDB and ChromaDB consistency
 - **Export Capabilities**: Download skills data for external analysis
 
-
+## Demo
+[demo link] (https://drive.google.com/file/d/1Sm3xFbZM84aE3PdMOlWxf7nJHOCPCPNX/view?usp=sharing)
 ## Conclusion
 
 AI Talent Scout represents a modern approach to resume management and candidate discovery, combining the power of Large Language Models with intelligent database management and vector search capabilities. The system provides a comprehensive solution for organizations looking to streamline their recruitment processes while maintaining data quality and consistency.
+
 
 
 
